@@ -35,8 +35,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# OpenNext
-/.open-next
+# OpenNext - ignore build artifacts but allow worker.js for Cloudflare deployment
+/.open-next/*
+!/.open-next/worker.js
 
 # wrangler files
 .wrangler
