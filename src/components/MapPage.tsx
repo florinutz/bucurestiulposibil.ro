@@ -17,7 +17,7 @@ export default function MapPage({
 }: MapPageProps) {
   const [center, setCenter] = useState<[number, number]>(initialCenter);
   const [zoom, setZoom] = useState(initialZoom);
-  const [proposals, setProposals] = useState<Array<{
+  const [setProposals] = useState<Array<{
     id: string;
     title: string;
     description: string;
@@ -25,6 +25,7 @@ export default function MapPage({
     lng: number;
     timestamp: Date;
   }>>([]);
+
   const [showProposalSuccess, setShowProposalSuccess] = useState(false);
 
   // Special pin state
