@@ -45,6 +45,18 @@ export default function MapPage({
     class?: string;
     type?: string;
   }>>([]);
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Help box state
+  const [showHelp, setShowHelp] = useState(false);
+
+  // Function to collapse both search and help
+  const collapseAll = useCallback(() => {
+    setShowSearch(false);
+    setShowHelp(false);
+    setSearchResults([]);
+  }, []);
 
   // Search functionality using Nominatim with debouncing
   const searchLocations = useCallback(async (query: string) => {
@@ -185,9 +197,10 @@ export default function MapPage({
     const calculatedZoom = calculateZoomLevel(result);
     setCenter([parseFloat(result.lat), parseFloat(result.lon)]);
     setZoom(calculatedZoom);
-    setSearchQuery(result.display_name);
+    setSearchQuery(''); // Clear search input when suggestion is selected
     setSearchResults([]);
-  }, [calculateZoomLevel]);
+    collapseAll(); // Collapse search and help when location is selected
+  }, [calculateZoomLevel, collapseAll]);
 
   // GPS location state
   const [isLocating, setIsLocating] = useState(false);
@@ -240,7 +253,8 @@ export default function MapPage({
   // Special pin placement handler
   const handleSpecialPinPlaced = useCallback((lat: number, lng: number) => {
     setSpecialPinCoords([lat, lng]);
-  }, []);
+    collapseAll(); // Collapse search and help when pin is placed
+  }, [collapseAll]);
 
   // Add location button handler
   const handleAddLocationClick = useCallback(() => {
@@ -251,15 +265,27 @@ export default function MapPage({
     setShowProposalForm(true);
   }, [specialPinCoords]);
 
-  // ESC key closes modal
+  // ESC key closes modal and collapses search/help
   useEffect(() => {
-    if (!showProposalForm) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setShowProposalForm(false);
+      if (e.key === 'Escape') {
+        if (showProposalForm) {
+          setShowProposalForm(false);
+        } else {
+          collapseAll();
+        }
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showProposalForm]);
+  }, [showProposalForm, collapseAll]);
+
+  // Focus search input when expanded
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showSearch]);
 
   // Backdrop click closes modal
   const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -315,15 +341,20 @@ export default function MapPage({
       </div>
 
       {/* Overlay UI: stacked column, pointer-events-none on container, z-20 */}
-      <div className="pointer-events-none fixed top-4 left-4 z-20 flex flex-col gap-4 max-w-xs w-[90vw]">
-        {/* Title */}
+      <div className="pointer-events-none fixed top-4 left-4 z-20 max-w-xs w-[90vw]">
+        {/* Title - single row, no left margin */}
         <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4">
-          <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis">{title}</h1>
         </div>
-        {/* Search Box */}
-        <div className="pointer-events-auto w-full">
-          <div className="relative">
+      </div>
+
+      {/* Bottom right controls: search, help, locate me */}
+      <div className="fixed bottom-28 right-4 z-30 flex flex-col items-end gap-3 pointer-events-auto">
+        {/* Collapsible Search Box */}
+        {showSearch ? (
+          <div className="relative w-64">
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search locations..."
               value={searchQuery}
@@ -333,56 +364,68 @@ export default function MapPage({
             <svg className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+            {/* Search Results (now above input) */}
+            {searchResults.length > 0 && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+                {searchResults.map((result, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSearchSelect(result)}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="font-medium text-sm">{result.display_name.split(',')[0]}</div>
+                    <div className="text-xs text-gray-500">{result.display_name}</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          {/* Search Results */}
-          {searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
-              {searchResults.map((result, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSearchSelect(result)}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                >
-                  <div className="font-medium text-sm">{result.display_name.split(',')[0]}</div>
-                  <div className="text-xs text-gray-500">{result.display_name}</div>
-                </button>
-              ))}
+        ) : (
+          <button
+            onClick={() => setShowSearch(true)}
+            className="p-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 hover:bg-white transition-colors cursor-pointer"
+            title="Search locations"
+            style={{ marginBottom: 0 }}
+          >
+            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        )}
+        {/* Help Button */}
+        {showHelp ? (
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-sm">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold text-gray-800">How to use:</h3>
+              <button
+                onClick={() => setShowHelp(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-          )}
-        </div>
-        {/* Info Panel */}
-        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 min-w-[200px] space-y-2 text-sm text-gray-600">
-          <div><span className="font-medium">Latitude:</span> {center[0].toFixed(4)}</div>
-          <div><span className="font-medium">Longitude:</span> {center[1].toFixed(4)}</div>
-          <div><span className="font-medium">Zoom:</span> {zoom}</div>
-          <div className="pt-2 border-t border-gray-200"><span className="font-medium">Proposals:</span> {proposals.length}</div>
-          {specialPinCoords && (
-            <div className="pt-2 border-t border-gray-200">
-              <span className="font-medium text-green-600">Pin placed ✓</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Add Location Button: top right, z-20 */}
-      <div className="fixed top-4 right-4 z-20 pointer-events-auto">
-        <button
-          onClick={handleAddLocationClick}
-          className={`p-3 rounded-lg shadow-lg border transition-all duration-200 ${
-            specialPinCoords 
-              ? 'bg-green-500 hover:bg-green-600 text-white border-green-600' 
-              : 'bg-white/90 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-white'
-          }`}
-          title={specialPinCoords ? "Add location at pinned coordinates" : "Click on paris first to place a pin"}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        </button>
-      </div>
-
-      {/* GPS Button: bottom right, never covers map controls, z-20 */}
-      <div className="fixed bottom-4 right-4 z-20 pointer-events-auto">
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• <strong>Search:</strong> Use the search box to find locations</li>
+              <li>• <strong>GPS:</strong> Click the location button to find your position</li>
+              <li>• <strong>Place Pin:</strong> Click anywhere on the map to place a red pin</li>
+              <li>• <strong>Add Location:</strong> Click the + button to add a location at the pin</li>
+              <li>• <strong>View:</strong> Click on existing pins to see location details</li>
+            </ul>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowHelp(true)}
+            className="p-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 hover:bg-white transition-colors cursor-pointer"
+            title="Show help"
+          >
+            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+        )}
+        {/* Locate Me Button */}
         <button
           id="gps-locate-btn"
           onClick={handleGPSLocation}
@@ -390,9 +433,10 @@ export default function MapPage({
           className={`p-3 rounded-lg shadow-lg border transition-all duration-200 ${
             isLocating 
               ? 'bg-blue-500 text-white border-blue-600 cursor-not-allowed' 
-              : 'bg-white/90 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-white'
-          }`}
+              : 'bg-white/90 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-white cursor-pointer'
+          } ${specialPinCoords ? 'animate-wobble' : ''}`}
           title={isLocating ? "Locating..." : "Find my location"}
+          style={{ marginBottom: 0 }}
         >
           {isLocating ? (
             <svg className="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -404,6 +448,23 @@ export default function MapPage({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           )}
+        </button>
+      </div>
+
+      {/* Add Location Button: top right, z-20 */}
+      <div className="fixed top-4 right-4 z-20 pointer-events-auto">
+        <button
+          onClick={handleAddLocationClick}
+          className={`p-3 rounded-lg shadow-lg border transition-all duration-200 ${
+            specialPinCoords 
+              ? 'bg-green-500 hover:bg-green-600 text-white border-green-600 cursor-pointer' 
+              : 'bg-white/90 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-white'
+          } ${specialPinCoords ? 'animate-wobble' : ''}`}
+          title={specialPinCoords ? "Add location at pinned coordinates" : "Click on paris first to place a pin"}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
         </button>
       </div>
 
@@ -479,27 +540,6 @@ export default function MapPage({
           </div>
         </div>
       )}
-
-      {/* Instructions Panel: bottom left, pointer-events-none, z-10 */}
-      <div className="pointer-events-none fixed bottom-4 left-4 z-10">
-        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-sm">
-          <h3 className="font-semibold text-gray-800 mb-2">How to use:</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• <strong>Search:</strong> Use the search box to find locations</li>
-            <li>• <strong>GPS:</strong> Click the location button to find your position</li>
-            <li>• <strong>Place Pin:</strong> Click anywhere on the map to place a red pin</li>
-            <li>• <strong>Add Location:</strong> Click the + button to add a location at the pin</li>
-            <li>• <strong>View:</strong> Click on existing pins to see location details</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Attribution: bottom right, above GPS button, z-10 */}
-      <div className="fixed bottom-20 right-4 z-10">
-        <div className="bg-white/90 backdrop-blur-sm rounded px-2 py-1 text-xs text-gray-600">
-          © OpenStreetMap contributors
-        </div>
-      </div>
     </div>
   );
 } 

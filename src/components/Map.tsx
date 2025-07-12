@@ -58,9 +58,12 @@ export default function Map({
 
         // Create map
         if (!mapRef.current) return;
-        const map = L.map(mapRef.current).setView(center, zoom);
+        const map = L.map(mapRef.current, { zoomControl: false }).setView(center, zoom);
         mapInstanceRef.current = map;
         console.log('Map created');
+
+        // Add zoom control to bottom right
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         // Add tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -241,18 +244,20 @@ export default function Map({
     return () => clearInterval(interval);
   }, [isClient, addNewLocationMarkers]);
 
+  // Render
   return (
-    <div className="relative w-full h-full">
-      <div 
-        ref={mapRef} 
-        className={className}
-        style={{ minHeight: '100vh' }}
-      />
-      {!isClient && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-          <div className="text-gray-600">Loading map...</div>
-        </div>
-      )}
-    </div>
+    !isClient ? (
+      <div className={`${className} bg-gray-100 flex items-center justify-center`}>
+        <div className="text-gray-500">Loading map...</div>
+      </div>
+    ) : (
+      <div className="relative w-full h-full">
+        <div 
+          ref={mapRef} 
+          className={className}
+          style={{ minHeight: '100vh' }}
+        />
+      </div>
+    )
   );
 } 

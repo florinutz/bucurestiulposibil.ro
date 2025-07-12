@@ -57,7 +57,7 @@ body {
 
 .special-pin-marker div {
   transition: transform 0.2s ease;
-  animation: pulse 2s infinite;
+  animation: wobble 1.5s ease-in-out 3;
 }
 
 .special-pin-marker:hover div {
@@ -65,16 +65,24 @@ body {
   animation: none;
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+/* Custom wobble animation */
+@keyframes wobble {
+  0%, 100% {
+    transform: scale(1);
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  25% {
+    transform: scale(1.2);
   }
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  50% {
+    transform: scale(1.1);
   }
+  75% {
+    transform: scale(1.15);
+  }
+}
+
+.animate-wobble {
+  animation: wobble 1.5s ease-in-out 3;
 }
 
 /* Leaflet popup customization */
