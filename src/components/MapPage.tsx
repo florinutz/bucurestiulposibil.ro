@@ -65,7 +65,7 @@ export default function MapPage({
         type?: string;
       }>;
       setSearchResults(data);
-    } catch (error) {
+    } catch {
       setSearchResults([]);
     }
   }, []);
@@ -283,7 +283,7 @@ export default function MapPage({
       const newProposal = locationStore.addProposal(data);
       
       // For demo purposes, automatically approve the proposal so it shows on the map
-      const approvedLocation = locationStore.approveProposal(newProposal.id);
+      locationStore.approveProposal(newProposal.id);
       
       setProposals(prev => [...prev, {
         id: newProposal.id,
@@ -309,7 +309,6 @@ export default function MapPage({
           center={center} 
           zoom={zoom} 
           className="w-full h-full"
-          onProposeLocation={undefined}
           onSpecialPinPlaced={handleSpecialPinPlaced}
           specialPinCoords={specialPinCoords}
         />

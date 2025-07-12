@@ -1,15 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { locationStore, Location } from '../lib/locationStore';
+import { locationStore } from '../lib/locationStore';
 
 interface MapProps {
   center?: [number, number];
   zoom?: number;
   className?: string;
-  onLocationClick?: (location: Location) => void;
-  onProposeLocation?: (data: { title: string; description: string; lat: number; lng: number }) => void;
-  onMapClick?: (lat: number, lng: number) => void;
   onSpecialPinPlaced?: (lat: number, lng: number) => void;
   specialPinCoords?: [number, number] | null;
 }
@@ -18,16 +15,13 @@ export default function Map({
   center = [40.7128, -74.0060],
   zoom = 13,
   className = "w-full h-full",
-  onLocationClick,
-  onProposeLocation,
-  onMapClick,
   onSpecialPinPlaced,
   specialPinCoords
 }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const specialPinRef = useRef<any>(null);
-  const locationMarkersRef = useRef<any[]>([]);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const specialPinRef = useRef<L.Marker | null>(null);
+  const locationMarkersRef = useRef<L.Marker[]>([]);
   const addedLocationIdsRef = useRef<Set<string>>(new Set());
   const onSpecialPinPlacedRef = useRef(onSpecialPinPlaced);
   const [isClient, setIsClient] = useState(false);
@@ -55,7 +49,7 @@ export default function Map({
         console.log('Leaflet imported successfully');
 
         // Fix for default markers
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -99,7 +93,7 @@ export default function Map({
         });
 
         // Handle map clicks
-        map.on('click', (e: any) => {
+        map.on('click', (e: L.LeafletMouseEvent) => {
           const { lat, lng } = e.latlng;
           
           // Remove existing special pin
@@ -146,7 +140,7 @@ export default function Map({
         mapInstanceRef.current = null;
       }
     };
-  }, [isClient]); // Only depend on isClient - remove center, zoom, onSpecialPinPlaced
+  }, [isClient, center, zoom]); // Include center and zoom in dependencies
 
   // Update map view when center/zoom changes
   useEffect(() => {
@@ -166,13 +160,13 @@ export default function Map({
         const map = mapInstanceRef.current;
         
         // Remove existing special pin
-        if (specialPinRef.current) {
+        if (specialPinRef.current && map) {
           map.removeLayer(specialPinRef.current);
           specialPinRef.current = null;
         }
         
         // Add new special pin if coordinates are provided
-        if (specialPinCoords) {
+        if (specialPinCoords && map) {
           const specialPin = L.marker(specialPinCoords, {
             icon: L.divIcon({
               className: 'special-pin-marker',
@@ -246,8 +240,6 @@ export default function Map({
 
     return () => clearInterval(interval);
   }, [isClient, addNewLocationMarkers]);
-
-  // console.log('Map render - isClient:', isClient, 'specialPinCoords:', specialPinCoords);
 
   return (
     <div className="relative w-full h-full">
