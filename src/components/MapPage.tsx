@@ -17,15 +17,6 @@ export default function MapPage({
 }: MapPageProps) {
   const [center, setCenter] = useState<[number, number]>(initialCenter);
   const [zoom, setZoom] = useState(initialZoom);
-  const [setProposals] = useState<Array<{
-    id: string;
-    title: string;
-    description: string;
-    lat: number;
-    lng: number;
-    timestamp: Date;
-  }>>([]);
-
   const [showProposalSuccess, setShowProposalSuccess] = useState(false);
 
   // Special pin state
@@ -312,14 +303,14 @@ export default function MapPage({
       // For demo purposes, automatically approve the proposal so it shows on the map
       locationStore.approveProposal(newProposal.id);
       
-      setProposals(prev => [...prev, {
-        id: newProposal.id,
-        title: newProposal.title,
-        description: newProposal.description,
-        lat: newProposal.lat,
-        lng: newProposal.lng,
-        timestamp: newProposal.createdAt
-      }]);
+      // setProposals(prev => [...prev, {
+      //   id: newProposal.id,
+      //   title: newProposal.title,
+      //   description: newProposal.description,
+      //   lat: newProposal.lat,
+      //   lng: newProposal.lng,
+      //   timestamp: newProposal.createdAt
+      // }]);
       setShowProposalSuccess(true);
       setTimeout(() => setShowProposalSuccess(false), 3000);
       setShowProposalForm(false);
