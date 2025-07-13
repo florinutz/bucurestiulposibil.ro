@@ -1,6 +1,6 @@
 import { type SchemaTypeDefinition } from 'sanity'
-import geopoint from './geopoint'
+import pin from './geopoint'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [geopoint],
+  types: [pin],
 }

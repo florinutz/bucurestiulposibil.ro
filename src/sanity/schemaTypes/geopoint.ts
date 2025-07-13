@@ -1,8 +1,8 @@
 import { defineField, defineType } from 'sanity'
 
 export default defineType({
-  name: 'geopoint',
-  title: 'Geopoint',
+  name: 'pin',
+  title: 'Pin',
   type: 'document',
   fields: [
     defineField({
@@ -113,7 +113,6 @@ export default defineType({
       const shortDescription = description ? 
         (description.length > 50 ? `${description.substring(0, 50)}...` : description) : 
         'No description'
-      
       return {
         title,
         subtitle: `${statusEmoji[status as keyof typeof statusEmoji]} ${status} • ${shortDescription}`,
