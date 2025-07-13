@@ -34,12 +34,16 @@
 	 */
 	"vars": {
 		"NEXT_PUBLIC_SANITY_PROJECT_ID": "dxicn1kk",
-		"NEXT_PUBLIC_SANITY_DATASET": "production"
+		"NEXT_PUBLIC_SANITY_DATASET": "production",
+		"SANITY_API_TOKEN": "sk0oTfmg6BJgl3HRdnW04AfUzXZqD54yv1EQfItrMBUubI952TdQdtUdXycWnNaCtI5Vcn0qUF3RvhRnQebBvfMe74SJ2TmpHuBceDL9WbZM7lHCQ7Loxx54JeYJc1D7PAxm1i1VqCs7ereYM4vrqM6xsYbaUSwgLqaMPDM8fm3HZuSfw128",
+		"SANITY_WEBHOOK_SECRET": "secretul"
 	},
 	// build time vars:
 	"define": {
 		"NEXT_PUBLIC_SANITY_PROJECT_ID": "dxicn1kk",
-		"NEXT_PUBLIC_SANITY_DATASET": "production"
+		"NEXT_PUBLIC_SANITY_DATASET": "production",
+		"SANITY_API_TOKEN": "sk0oTfmg6BJgl3HRdnW04AfUzXZqD54yv1EQfItrMBUubI952TdQdtUdXycWnNaCtI5Vcn0qUF3RvhRnQebBvfMe74SJ2TmpHuBceDL9WbZM7lHCQ7Loxx54JeYJc1D7PAxm1i1VqCs7ereYM4vrqM6xsYbaUSwgLqaMPDM8fm3HZuSfw128",
+		"SANITY_WEBHOOK_SECRET": "secretul"
 	},
 	/**
 	 * Note: Use secrets to store sensitive data.
