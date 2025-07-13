@@ -15,8 +15,8 @@ const MapPage = dynamic(() => import('../components/MapPage'), {
 export default function Home() {
   return (
     <MapPage 
-      initialCenter={[40.7128, -74.0060]} // New York coordinates
-      initialZoom={12}
+      initialCenter={[44.4268, 26.1025]} // Bucharest coordinates
+      initialZoom={13}
       title="Harta Chestiilor - Pinuri Interactive"
     />
   );

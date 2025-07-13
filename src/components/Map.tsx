@@ -12,8 +12,8 @@ interface MapProps {
 }
 
 export default function Map({ 
-  center = [40.7128, -74.0060],
-  zoom = 13,
+  center = [44.4268, 26.1025], // Bucharest coordinates
+  zoom = 11,
   className = "w-full h-full",
   onSpecialPinPlaced,
   specialPinCoords
@@ -40,7 +40,7 @@ export default function Map({
   useEffect(() => {
     if (!isClient || !mapRef.current || mapInstanceRef.current) return;
 
-    console.log('Starting paris initialization...');
+    console.log('Starting map initialization...');
 
     const initMap = async () => {
       try {
@@ -70,6 +70,9 @@ export default function Map({
           attribution: '© OpenStreetMap contributors',
           maxZoom: 19,
         }).addTo(map);
+
+        // Load locations from D1 database
+        await locationStore.loadLocations();
 
         // Add initial location markers
         const locations = locationStore.getLocations();

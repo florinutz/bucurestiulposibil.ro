@@ -11,8 +11,8 @@ interface MapPageProps {
 }
 
 export default function MapPage({ 
-  initialCenter = [40.7128, -74.0060], 
-  initialZoom = 13,
+  initialCenter = [44.4268, 26.1025], // Bucharest coordinates
+  initialZoom = 11,
   title = "Interactive Map"
 }: MapPageProps) {
   const [center, setCenter] = useState<[number, number]>(initialCenter);

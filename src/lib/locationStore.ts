@@ -20,57 +20,53 @@ export interface LocationProposal {
   createdBy?: string;
 }
 
+interface D1Geopoint {
+  id: string;
+  title: string;
+  description: string;
+  lat: number;
+  lng: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // In-memory storage for demo purposes
 class LocationStore {
-  private locations: Location[] = [
-    {
-      id: '1',
-      title: 'Central Park',
-      description: 'Beautiful urban park in Manhattan with walking trails, lakes, and recreational facilities.',
-      lat: 40.7829,
-      lng: -73.9654,
-      status: 'approved',
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      id: '2',
-      title: 'Times Square',
-      description: 'Famous commercial intersection and entertainment hub in Midtown Manhattan.',
-      lat: 40.7580,
-      lng: -73.9855,
-      status: 'approved',
-      createdAt: new Date('2024-01-02')
-    },
-    {
-      id: '3',
-      title: 'Brooklyn Bridge',
-      description: 'Iconic suspension bridge connecting Manhattan and Brooklyn across the East River.',
-      lat: 40.7061,
-      lng: -73.9969,
-      status: 'approved',
-      createdAt: new Date('2024-01-03')
-    },
-    {
-      id: '4',
-      title: 'Statue of Liberty',
-      description: 'Famous neoclassical sculpture on Liberty Island in New York Harbor.',
-      lat: 40.6892,
-      lng: -74.0445,
-      status: 'approved',
-      createdAt: new Date('2024-01-04')
-    },
-    {
-      id: '5',
-      title: 'Empire State Building',
-      description: 'Iconic 102-story Art Deco skyscraper in Midtown Manhattan.',
-      lat: 40.7484,
-      lng: -73.9857,
-      status: 'approved',
-      createdAt: new Date('2024-01-05')
-    }
-  ];
-
+  private locations: Location[] = [];
   private proposals: LocationProposal[] = [];
+  private isLoaded = false;
+
+  // Load locations from D1 database
+  async loadLocations(): Promise<void> {
+    if (this.isLoaded) return;
+    
+    try {
+      const response = await fetch('/api/geopoints');
+      if (response.ok) {
+        const result = await response.json() as { success: boolean; count: number; geopoints: D1Geopoint[] };
+        if (result.success && result.geopoints) {
+          this.locations = result.geopoints.map((point: D1Geopoint) => ({
+            id: point.id,
+            title: point.title,
+            description: point.description || '',
+            lat: point.lat,
+            lng: point.lng,
+            status: 'approved' as const,
+            createdAt: new Date(point.created_at),
+            createdBy: 'system'
+          }));
+          this.isLoaded = true;
+          console.log('Loaded locations from D1:', this.locations.length);
+        } else {
+          console.error('Invalid response format from D1 API');
+        }
+      } else {
+        console.error('Failed to load locations from D1');
+      }
+    } catch (error) {
+      console.error('Error loading locations:', error);
+    }
+  }
 
   // Get all approved locations
   getLocations(): Location[] {
@@ -138,6 +134,12 @@ class LocationStore {
       location.title.toLowerCase().includes(lowerQuery) ||
       location.description.toLowerCase().includes(lowerQuery)
     );
+  }
+
+  // Force reload locations from D1
+  async reloadLocations(): Promise<void> {
+    this.isLoaded = false;
+    await this.loadLocations();
   }
 }
 
