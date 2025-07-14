@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
-import { GeopointProposal } from '@/types/geopoint'
+import { PinProposal } from '@/types/geopoint'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       useCdn: false,
     })
 
-    const body = await request.json() as GeopointProposal
+    const body = await request.json() as PinProposal
     
     // Basic validation
     if (!body.title || !body.location) {
