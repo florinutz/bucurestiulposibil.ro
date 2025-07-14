@@ -9,7 +9,7 @@ Object.defineProperty(global, 'crypto', {
 })
 
 // Mock Cloudflare context
-;(global as any).getCloudflareContext = vi.fn().mockResolvedValue({
+;(global as { getCloudflareContext?: () => Promise<{ env: Record<string, unknown> }> }).getCloudflareContext = vi.fn().mockResolvedValue({
   env: {
     DB: {
       prepare: vi.fn().mockReturnValue({
@@ -28,8 +28,8 @@ Object.defineProperty(global, 'crypto', {
 })
 
 // Mock Next.js Request/Response
-;(global as any).Request = Request
-;(global as any).Response = Response
+;(global as { Request?: typeof Request }).Request = Request
+;(global as { Response?: typeof Response }).Response = Response
 
 // Setup MSW for API mocking
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))

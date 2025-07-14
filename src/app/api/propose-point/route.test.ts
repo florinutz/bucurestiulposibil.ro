@@ -186,7 +186,10 @@ describe('/api/propose-point', () => {
       )
 
       const response = await GET(request)
-      const data = await response.json() as { exists: boolean; point: any }
+      const data = await response.json() as { 
+        exists: boolean; 
+        point: { id: string; title: string; status: string } | null 
+      }
 
       expect(response.status).toBe(200)
       expect(data.exists).toBe(false)
@@ -199,7 +202,10 @@ describe('/api/propose-point', () => {
       )
 
       const response = await GET(request)
-      const data = await response.json() as { exists: boolean; point: any }
+      const data = await response.json() as { 
+        exists: boolean; 
+        point: { id: string; title: string; status: string } | null 
+      }
 
       expect(response.status).toBe(200)
       expect(data.exists).toBe(false)
