@@ -258,6 +258,7 @@ export default function Map({
         <div 
           ref={mapRef} 
           className={className}
+          data-testid="map-container"
           style={{ minHeight: '100vh' }}
         />
       </div>
