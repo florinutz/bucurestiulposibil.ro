@@ -1,7 +1,7 @@
-// Sanity geopoint data structure
-export interface SanityGeopoint {
+// Sanity pin data structure
+export interface SanityPin {
   _id: string
-  _type: 'geopoint'
+  _type: 'pin'
   _createdAt: string
   _updatedAt: string
   _rev: string
@@ -41,7 +41,7 @@ export interface D1Geopoint {
 }
 
 // Form data for point proposals
-export interface GeopointProposal {
+export interface PinProposal {
   title: string
   location: {
     lat: number
@@ -71,5 +71,5 @@ export interface SanityWebhookData {
   _type: string
   _id: string
   eventType: SanityWebhookEvent
-  data: SanityGeopoint | null // null for delete events
+  data: SanityPin | null // null for delete events
 } 

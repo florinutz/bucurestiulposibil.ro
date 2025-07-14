@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { SanityGeopoint, D1Geopoint } from '@/types/geopoint'
+import { SanityPin, D1Geopoint } from '@/types/geopoint'
 
 // Helper function to verify Sanity webhook signature
 async function verifySanitySignature(request: NextRequest, secret: string): Promise<boolean> {
@@ -77,14 +77,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the body after verification
-    const body = await request.json() as SanityGeopoint
+    const body = await request.json() as SanityPin
     
     // Log the webhook payload for debugging
     console.log('Sanity webhook received:', JSON.stringify(body, null, 2))
 
     // Handle different webhook events
-    if (body._type === 'geopoint') {
-      await handleGeopointUpdate(body)
+    if (body._type === 'pin') {
+      await handlePinUpdate(body)
     }
 
     return NextResponse.json({ success: true })
@@ -97,10 +97,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleGeopointUpdate(sanityData: SanityGeopoint) {
-  // Only sync approved geopoints to D1
+async function handlePinUpdate(sanityData: SanityPin) {
+  // Only sync approved pins to D1
   if (sanityData.status !== 'approved') {
-    console.log(`Geopoint ${sanityData._id} is not approved, skipping D1 sync`)
+    console.log(`Pin ${sanityData._id} is not approved, skipping D1 sync`)
     
     // If it was previously approved but now rejected/pending, remove from D1
     if (sanityData.status === 'rejected' || sanityData.status === 'pending') {
@@ -159,7 +159,7 @@ async function upsertToD1(data: D1Geopoint) {
       data.approved_by || null
     ).run()
 
-    console.log(`Successfully synced geopoint ${data.id} to D1`)
+    console.log(`Successfully synced pin ${data.id} to D1`)
   } catch (error) {
     console.error('Error syncing to D1:', error)
     throw error
@@ -178,7 +178,7 @@ async function deleteFromD1(id: string) {
     const stmt = db.prepare('DELETE FROM geopoints WHERE id = ?')
     await stmt.bind(id).run()
 
-    console.log(`Successfully deleted geopoint ${id} from D1`)
+    console.log(`Successfully deleted pin ${id} from D1`)
   } catch (error) {
     console.error('Error deleting from D1:', error)
     throw error
@@ -210,7 +210,7 @@ export async function DELETE(request: NextRequest) {
 
     const body = await request.json() as { _type?: string; _id?: string }
     
-    if (body._type === 'geopoint' && body._id) {
+    if (body._type === 'pin' && body._id) {
       await deleteFromD1(body._id)
     }
 
