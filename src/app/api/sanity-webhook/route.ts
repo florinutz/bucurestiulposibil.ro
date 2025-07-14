@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { SanityGeopoint, D1Geopoint } from '@/types/geopoint'
 
-// Webhook secret for validation (set this in your environment)
-const WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET
-
 export async function POST(request: NextRequest) {
   try {
+    const { env } = await getCloudflareContext()
+    
+    // Get webhook secret from Secrets Store binding
+    const WEBHOOK_SECRET = await env.SANITY_WEBHOOK_SECRET.get()
+
     // Verify webhook signature (optional but recommended)
     const signature = request.headers.get('sanity-webhook-signature')
     if (WEBHOOK_SECRET && signature) {

@@ -34,21 +34,30 @@
 	 */
 	"vars": {
 		"NEXT_PUBLIC_SANITY_PROJECT_ID": "dxicn1kk",
-		"NEXT_PUBLIC_SANITY_DATASET": "production",
-		"SANITY_API_TOKEN": "sk0oTfmg6BJgl3HRdnW04AfUzXZqD54yv1EQfItrMBUubI952TdQdtUdXycWnNaCtI5Vcn0qUF3RvhRnQebBvfMe74SJ2TmpHuBceDL9WbZM7lHCQ7Loxx54JeYJc1D7PAxm1i1VqCs7ereYM4vrqM6xsYbaUSwgLqaMPDM8fm3HZuSfw128",
-		"SANITY_WEBHOOK_SECRET": "secretul"
+		"NEXT_PUBLIC_SANITY_DATASET": "production"
 	},
 	// build time vars:
 	"define": {
 		"NEXT_PUBLIC_SANITY_PROJECT_ID": "dxicn1kk",
-		"NEXT_PUBLIC_SANITY_DATASET": "production",
-		"SANITY_API_TOKEN": "sk0oTfmg6BJgl3HRdnW04AfUzXZqD54yv1EQfItrMBUubI952TdQdtUdXycWnNaCtI5Vcn0qUF3RvhRnQebBvfMe74SJ2TmpHuBceDL9WbZM7lHCQ7Loxx54JeYJc1D7PAxm1i1VqCs7ereYM4vrqM6xsYbaUSwgLqaMPDM8fm3HZuSfw128",
-		"SANITY_WEBHOOK_SECRET": "secretul"
+		"NEXT_PUBLIC_SANITY_DATASET": "production"
 	},
+
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
+	"secrets_store_secrets": [
+		{
+			"binding": "SANITY_API_TOKEN",
+			"secret_name": "SANITY_API_TOKEN",
+			"store_id": "d9e7888d67544bf49ce170835bb659bd"
+		},
+		{
+			"binding": "SANITY_WEBHOOK_SECRET",
+			"secret_name": "SANITY_WEBHOOK_SECRET",
+			"store_id": "d9e7888d67544bf49ce170835bb659bd"
+		}
+	],
 
 	/**
 	 * Static Assets
@@ -65,7 +74,7 @@
 			"database_name": "dots",
 			"database_id": "a4d6a7b1-0bdd-4efa-8eec-41b0ab90c474"
 		}
-	],
+	]
 
 	/**
 	 * Service Bindings (communicate between multiple Workers)

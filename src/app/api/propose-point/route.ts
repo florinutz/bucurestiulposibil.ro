@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
 import { GeopointProposal } from '@/types/geopoint'
-
-// Create Sanity client for writing data
-const sanityClient = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
-  apiVersion: '2025-01-12',
-  token: process.env.SANITY_API_TOKEN, // Write token needed for creating documents
-  useCdn: false,
-})
+import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 export async function POST(request: NextRequest) {
   try {
+    const { env } = getCloudflareContext()
+    
+    const sanityClient = createClient({
+      projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+      dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
+      apiVersion: '2025-01-12',
+      token: await env.SANITY_API_TOKEN.get(),
+      useCdn: false,
+    })
+
     const body = await request.json() as GeopointProposal
     
     // Basic validation
@@ -100,6 +102,17 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check if a point already exists (optional)
 export async function GET(request: NextRequest) {
   try {
+    const { env } = getCloudflareContext()
+    
+    // Create Sanity client for reading data with Secrets Store binding
+    const sanityClient = createClient({
+      projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+      dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
+      apiVersion: '2025-01-12',
+      token: await env.SANITY_API_TOKEN.get(), // Use Secrets Store binding
+      useCdn: false,
+    })
+
     const { searchParams } = new URL(request.url)
     const title = searchParams.get('title')
     const lat = searchParams.get('lat')
