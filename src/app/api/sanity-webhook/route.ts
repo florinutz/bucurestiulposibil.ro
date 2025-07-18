@@ -1,79 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { SanityPin, D1Pin } from '@/types/geopoint'
-
-// Helper function to verify Sanity webhook signature
-async function verifySanitySignature(request: NextRequest, secret: string): Promise<boolean> {
-  const signature = request.headers.get('sanity-webhook-signature')
-  if (!signature) {
-    console.warn('No signature header found')
-    return false
-  }
-
-  try {
-    // Clone the request to read the body as text
-    const clonedRequest = request.clone()
-    const bodyText = await clonedRequest.text()
-    
-    // Create HMAC-SHA256 signature
-    const encoder = new TextEncoder()
-    const keyData = encoder.encode(secret)
-    const messageData = encoder.encode(bodyText)
-    
-    // Import the key
-    const key = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    )
-    
-    // Sign the message
-    const signatureBuffer = await crypto.subtle.sign('HMAC', key, messageData)
-    
-    // Convert to hex string
-    const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-    
-    // Compare signatures (constant-time comparison)
-    if (signature.length !== expectedSignature.length) {
-      return false
-    }
-    
-    let result = 0
-    for (let i = 0; i < signature.length; i++) {
-      result |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i)
-    }
-    
-    return result === 0
-  } catch (error) {
-    console.error('Error verifying signature:', error)
-    return false
-  }
-}
+import { handleWebhookSignature } from '@/lib/webhookUtils'
 
 export async function POST(request: NextRequest) {
   try {
     const { env } = await getCloudflareContext()
     
-    // Get webhook secret from Secrets Store binding
-    const WEBHOOK_SECRET = await env.SANITY_WEBHOOK_SECRET.get()
-
-    // Verify webhook signature if secret is configured
-    if (WEBHOOK_SECRET) {
-      const isValidSignature = await verifySanitySignature(request, WEBHOOK_SECRET)
-      if (!isValidSignature) {
-        console.error('Invalid webhook signature')
-        return NextResponse.json(
-          { error: 'Invalid signature' },
-          { status: 401 }
-        )
-      }
-      console.log('Webhook signature verified successfully')
-    } else {
-      console.warn('No webhook secret configured, skipping signature verification')
+    // Handle signature verification
+    const signatureResult = await handleWebhookSignature(
+      request, 
+      () => env.SANITY_WEBHOOK_SECRET.get()
+    )
+    
+    if (!signatureResult.success) {
+      return NextResponse.json(
+        { error: signatureResult.error },
+        { status: signatureResult.status }
+      )
     }
 
     // Parse the body after verification
@@ -190,22 +134,17 @@ export async function DELETE(request: NextRequest) {
   try {
     const { env } = await getCloudflareContext()
     
-    // Get webhook secret from Secrets Store binding
-    const WEBHOOK_SECRET = await env.SANITY_WEBHOOK_SECRET.get()
-
-    // Verify webhook signature if secret is configured
-    if (WEBHOOK_SECRET) {
-      const isValidSignature = await verifySanitySignature(request, WEBHOOK_SECRET)
-      if (!isValidSignature) {
-        console.error('Invalid webhook signature')
-        return NextResponse.json(
-          { error: 'Invalid signature' },
-          { status: 401 }
-        )
-      }
-      console.log('Webhook signature verified successfully')
-    } else {
-      console.warn('No webhook secret configured, skipping signature verification')
+    // Handle signature verification
+    const signatureResult = await handleWebhookSignature(
+      request, 
+      () => env.SANITY_WEBHOOK_SECRET.get()
+    )
+    
+    if (!signatureResult.success) {
+      return NextResponse.json(
+        { error: signatureResult.error },
+        { status: signatureResult.status }
+      )
     }
 
     const body = await request.json() as { _type?: string; _id?: string }
