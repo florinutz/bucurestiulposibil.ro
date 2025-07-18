@@ -9,7 +9,7 @@ const customRender = (
 ) => render(ui, { ...options })
 
 // Test data helpers
-export const createMockGeopoint = (overrides = {}) => ({
+export const createMockPin = (overrides = {}) => ({
   id: 'test-point-1',
   title: 'Test Point',
   lat: 48.8566,
@@ -31,9 +31,9 @@ export const createMockGeopointProposal = (overrides = {}) => ({
   ...overrides,
 })
 
-export const createMockSanityGeopoint = (overrides = {}) => ({
+export const createMockSanityPin = (overrides = {}) => ({
   _id: 'test-document-id',
-  _type: 'geopoint',
+  _type: 'pin',
   _createdAt: '2025-01-01T00:00:00Z',
   _updatedAt: '2025-01-01T00:00:00Z',
   title: 'Test Point',

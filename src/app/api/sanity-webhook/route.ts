@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { SanityPin, D1Geopoint } from '@/types/geopoint'
+import { SanityPin, D1Pin } from '@/types/geopoint'
 
 // Helper function to verify Sanity webhook signature
 async function verifySanitySignature(request: NextRequest, secret: string): Promise<boolean> {
@@ -110,7 +110,7 @@ async function handlePinUpdate(sanityData: SanityPin) {
   }
 
   // Convert Sanity data to D1 format
-  const d1Data: D1Geopoint = {
+  const d1Data: D1Pin = {
     id: sanityData._id,
     title: sanityData.title,
     slug: sanityData.slug.current,
@@ -126,7 +126,7 @@ async function handlePinUpdate(sanityData: SanityPin) {
   await upsertToD1(d1Data)
 }
 
-async function upsertToD1(data: D1Geopoint) {
+async function upsertToD1(data: D1Pin) {
   try {
     const { env } = await getCloudflareContext()
     const db = env.DB as D1Database

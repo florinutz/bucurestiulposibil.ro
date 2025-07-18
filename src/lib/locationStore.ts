@@ -20,7 +20,7 @@ export interface LocationProposal {
   createdBy?: string;
 }
 
-interface D1Geopoint {
+interface D1Pin {
   id: string;
   title: string;
   description: string;
@@ -43,9 +43,9 @@ class LocationStore {
     try {
       const response = await fetch('/api/geopoints');
       if (response.ok) {
-        const result = await response.json() as { success: boolean; count: number; geopoints: D1Geopoint[] };
-        if (result.success && result.geopoints) {
-          this.locations = result.geopoints.map((point: D1Geopoint) => ({
+        const result = await response.json() as { success: boolean; count: number; pins: D1Pin[] };
+        if (result.success && result.pins) {
+          this.locations = result.pins.map((point: D1Pin) => ({
             id: point.id,
             title: point.title,
             description: point.description || '',

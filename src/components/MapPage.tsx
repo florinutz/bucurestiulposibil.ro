@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Map from './Map';
-import { locationStore } from '../lib/locationStore';
 
 interface MapPageProps {
   initialCenter?: [number, number];
@@ -24,7 +23,14 @@ export default function MapPage({
 
   // Proposal dialog state
   const [showProposalForm, setShowProposalForm] = useState(false);
-  const [proposalData, setProposalData] = useState({ title: '', description: '' });
+  const [proposalData, setProposalData] = useState({ 
+    title: '', 
+    description: '', 
+    name: '',
+    email: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const proposalDialogRef = useRef<HTMLDivElement>(null);
 
   // Search state
@@ -279,6 +285,13 @@ export default function MapPage({
     }
   }, [showSearch]);
 
+  // Clear error when modal is opened
+  useEffect(() => {
+    if (showProposalForm) {
+      setSubmitError(null);
+    }
+  }, [showProposalForm]);
+
   // Backdrop click closes modal
   const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (e.target === proposalDialogRef.current) {
@@ -286,36 +299,53 @@ export default function MapPage({
     }
   }, []);
 
-  const handleProposalSubmit = useCallback((e: React.FormEvent) => {
+  const handleProposalSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (specialPinCoords) {
-      const data = {
+    if (!specialPinCoords) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const proposalPayload = {
         title: proposalData.title,
         description: proposalData.description,
-        lat: specialPinCoords[0],
-        lng: specialPinCoords[1]
+        location: {
+          lat: specialPinCoords[0],
+          lng: specialPinCoords[1]
+        },
+        submittedBy: {
+          name: proposalData.name,
+          email: proposalData.email
+        }
       };
-      // Log the submission
-      console.log('Proposal submitted:', data);
-      // Add to proposals (for demo, not backend)
-      const newProposal = locationStore.addProposal(data);
-      
-      // For demo purposes, automatically approve the proposal so it shows on the map
-      locationStore.approveProposal(newProposal.id);
-      
-      // setProposals(prev => [...prev, {
-      //   id: newProposal.id,
-      //   title: newProposal.title,
-      //   description: newProposal.description,
-      //   lat: newProposal.lat,
-      //   lng: newProposal.lng,
-      //   timestamp: newProposal.createdAt
-      // }]);
+
+      const response = await fetch('/api/propose-point', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(proposalPayload),
+      });
+
+      const result = await response.json() as { success?: boolean; error?: string; message?: string; id?: string };
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit proposal');
+      }
+
+      console.log('Proposal submitted successfully:', result);
       setShowProposalSuccess(true);
-      setTimeout(() => setShowProposalSuccess(false), 3000);
+      setTimeout(() => setShowProposalSuccess(false), 5000);
       setShowProposalForm(false);
-      setProposalData({ title: '', description: '' }); // Clear form on submit
-      setSpecialPinCoords(null); // Remove the special pin after submission
+      setProposalData({ title: '', description: '', name: '', email: '' });
+      setSpecialPinCoords(null);
+      
+    } catch (error) {
+      console.error('Error submitting proposal:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Failed to submit proposal');
+    } finally {
+      setIsSubmitting(false);
     }
   }, [specialPinCoords, proposalData]);
 
@@ -477,9 +507,10 @@ export default function MapPage({
                 <input
                   type="text"
                   required
+                  disabled={isSubmitting}
                   value={proposalData.title}
                   onChange={(e) => setProposalData({ ...proposalData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Enter location title"
                 />
               </div>
@@ -489,27 +520,78 @@ export default function MapPage({
                 </label>
                 <textarea
                   required
+                  disabled={isSubmitting}
                   value={proposalData.description}
                   onChange={(e) => setProposalData({ ...proposalData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={3}
                   placeholder="Enter location description"
                 />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Your Name (optional)
+                  </label>
+                  <input
+                    type="text"
+                    disabled={isSubmitting}
+                    value={proposalData.name}
+                    onChange={(e) => setProposalData({ ...proposalData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="Your name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email (optional)
+                  </label>
+                  <input
+                    type="email"
+                    disabled={isSubmitting}
+                    value={proposalData.email}
+                    onChange={(e) => setProposalData({ ...proposalData, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+              </div>
+              
+              {submitError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <div className="text-sm text-red-700">{submitError}</div>
+                </div>
+              )}
+              
               <div className="text-sm text-gray-600">
                 Coordinates: {specialPinCoords?.[0].toFixed(6)}, {specialPinCoords?.[1].toFixed(6)}
+              </div>
+              <div className="text-xs text-gray-500">
+                Your submission will be reviewed by moderators before appearing on the map.
               </div>
               <div className="flex space-x-3">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  Add Location
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit for Review'
+                  )}
                 </button>
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => setShowProposalForm(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors disabled:bg-gray-200 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -527,7 +609,7 @@ export default function MapPage({
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>Location added successfully!</span>
+              <span>Location submitted for review!</span>
             </div>
           </div>
         </div>

@@ -27,7 +27,7 @@ export interface SanityPin {
 }
 
 // D1 database structure (flattened for SQL)
-export interface D1Geopoint {
+export interface D1Pin {
   id: string // maps to _id
   title: string
   slug: string

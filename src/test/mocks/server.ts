@@ -27,7 +27,9 @@ export const handlers = [
 
   http.get('/api/geopoints', () => {
     return HttpResponse.json({
-      geopoints: [
+      success: true,
+      count: 1,
+      pins: [
         {
           id: 'test-point-1',
           title: 'Test Point 1',

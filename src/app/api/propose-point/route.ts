@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Create the document in Sanity
     const sanityDoc = {
-      _type: 'geopoint',
+      _type: 'pin',
       title: body.title,
       slug: {
         current: slug,
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
     let params: Record<string, string | number> = {}
 
     if (title) {
-      query = `*[_type == "geopoint" && title match $title][0]`
+      query = `*[_type == "pin" && title match $title][0]`
       params.title = `*${title}*`
     } else if (lat && lng) {
       // Check for points within ~100m radius (rough approximation)
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
       const lngFloat = parseFloat(lng)
       const tolerance = 0.001 // roughly 100m
       
-      query = `*[_type == "geopoint" && 
+      query = `*[_type == "pin" && 
         location.lat >= $minLat && location.lat <= $maxLat &&
         location.lng >= $minLng && location.lng <= $maxLng][0]`
       

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { D1Geopoint } from '@/types/geopoint'
+import { D1Pin } from '@/types/geopoint'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const bounds = searchParams.get('bounds') // "north,south,east,west"
-    const id = searchParams.get('id') // For getting a specific geopoint
+    const id = searchParams.get('id') // For getting a specific pin
 
     const { env } = await getCloudflareContext()
     const db = env.DB as D1Database
@@ -18,25 +18,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // If ID is provided, return specific geopoint
+    // If ID is provided, return specific pin
     if (id) {
       const stmt = db.prepare('SELECT * FROM geopoints WHERE id = ?')
       const result = await stmt.bind(id).first()
 
       if (!result) {
         return NextResponse.json(
-          { error: 'Geopoint not found' },
+          { error: 'Pin not found' },
           { status: 404 }
         )
       }
 
-      const geopoint = {
-        ...(result as unknown as D1Geopoint),
+      const pin = {
+        ...(result as unknown as D1Pin),
       }
 
       return NextResponse.json({
         success: true,
-        geopoint
+        pin
       })
     }
 
@@ -57,23 +57,23 @@ export async function GET(request: NextRequest) {
     const result = await stmt.bind(...params).all()
 
     // Transform the data
-    const geopoints = (result.results || []).map((row: Record<string, unknown>) => {
+    const pins = (result.results || []).map((row: Record<string, unknown>) => {
       const point = {
-        ...(row as unknown as D1Geopoint),
+        ...(row as unknown as D1Pin),
       }
       return point
     })
 
     return NextResponse.json({
       success: true,
-      count: geopoints.length,
-      geopoints
+      count: pins.length,
+      pins
     })
 
   } catch (error) {
-    console.error('Error fetching geopoints:', error)
+    console.error('Error fetching pins:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch geopoints' },
+      { error: 'Failed to fetch pins' },
       { status: 500 }
     )
   }
