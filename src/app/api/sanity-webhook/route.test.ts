@@ -252,8 +252,8 @@ describe('/api/sanity-webhook', () => {
       const response = await POST(request)
       const data = await response.json() as { error: string }
 
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Webhook processing failed')
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Invalid JSON payload')
     })
   })
 

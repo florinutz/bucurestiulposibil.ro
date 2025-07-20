@@ -5,7 +5,12 @@ import { handleWebhookSignature } from '@/lib/webhookUtils'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()))
+    
     const { env } = getCloudflareContext()
+    
+    // Clone the request to preserve the body for later use
+    const clonedRequest = request.clone()
     
     // Handle signature verification
     const signatureResult = await handleWebhookSignature(
@@ -14,26 +19,53 @@ export async function POST(request: NextRequest) {
     )
     
     if (!signatureResult.success) {
+      console.log('Signature verification failed:', signatureResult.error)
       return NextResponse.json(
         { error: signatureResult.error },
         { status: signatureResult.status }
       )
     }
 
-    // Parse the body after verification
-    const body = await request.json() as SanityPin
+    console.log('Signature verification passed')
+
+    // Parse the body from the cloned request
+    const bodyText = await clonedRequest.text()
+    console.log('Raw request body:', bodyText)
     
-    // Log the webhook payload for debugging
-    console.log('Sanity webhook received:', JSON.stringify(body, null, 2))
+    if (!bodyText) {
+      console.error('Empty request body received')
+      return NextResponse.json(
+        { error: 'Empty request body' },
+        { status: 400 }
+      )
+    }
+    
+    let body: SanityPin
+    try {
+      body = JSON.parse(bodyText) as SanityPin
+      console.log('Parsed webhook payload:', JSON.stringify(body, null, 2))
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError)
+      console.error('Failed to parse body:', bodyText)
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      )
+    }
 
     // Handle different webhook events
     if (body._type === 'pin') {
+      console.log(`Processing pin webhook for ID: ${body._id}`)
       await handlePinUpdate(body)
+    } else {
+      console.log(`Ignoring webhook for type: ${body._type}`)
     }
 
+    console.log('=== WEBHOOK PROCESSING COMPLETE ===')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Webhook error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
@@ -132,7 +164,15 @@ async function deleteFromD1(id: string) {
 // Handle DELETE webhooks (when documents are deleted from Sanity)
 export async function DELETE(request: NextRequest) {
   try {
+    console.log('=== SANITY DELETE WEBHOOK DEBUG ===')
+    console.log('Request URL:', request.url)
+    console.log('Request method:', request.method)
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()))
+    
     const { env } = getCloudflareContext()
+    
+    // Clone the request to preserve the body for later use
+    const clonedRequest = request.clone()
     
     // Handle signature verification
     const signatureResult = await handleWebhookSignature(
@@ -141,21 +181,52 @@ export async function DELETE(request: NextRequest) {
     )
     
     if (!signatureResult.success) {
+      console.log('Signature verification failed:', signatureResult.error)
       return NextResponse.json(
         { error: signatureResult.error },
         { status: signatureResult.status }
       )
     }
+    
+    console.log('Signature verification passed')
 
-    const body = await request.json() as { _type?: string; _id?: string }
+    // Parse the body from the cloned request
+    const bodyText = await clonedRequest.text()
+    console.log('Raw DELETE request body:', bodyText)
+    
+    if (!bodyText) {
+      console.error('Empty DELETE request body received')
+      return NextResponse.json(
+        { error: 'Empty request body' },
+        { status: 400 }
+      )
+    }
+    
+    let body: { _type?: string; _id?: string }
+    try {
+      body = JSON.parse(bodyText)
+      console.log('Parsed DELETE webhook payload:', JSON.stringify(body, null, 2))
+    } catch (parseError) {
+      console.error('JSON parse error for DELETE:', parseError)
+      console.error('Failed to parse DELETE body:', bodyText)
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      )
+    }
     
     if (body._type === 'pin' && body._id) {
+      console.log(`Processing pin DELETE webhook for ID: ${body._id}`)
       await deleteFromD1(body._id)
+    } else {
+      console.log(`Ignoring DELETE webhook for type: ${body._type}`)
     }
 
+    console.log('=== DELETE WEBHOOK PROCESSING COMPLETE ===')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete webhook error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { error: 'Delete webhook processing failed' },
       { status: 500 }
