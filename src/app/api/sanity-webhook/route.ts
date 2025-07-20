@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     
     const { env } = getCloudflareContext()
     
-    // Clone the request to preserve the body for later use
-    const clonedRequest = request.clone()
-    
-    // Handle signature verification
+    // Handle signature verification and get body text
     const signatureResult = await handleWebhookSignature(
       request, 
       () => env.SANITY_WEBHOOK_SECRET.get()
@@ -25,11 +22,11 @@ export async function POST(request: NextRequest) {
         { status: signatureResult.status }
       )
     }
-
+    
     console.log('Signature verification passed')
 
-    // Parse the body from the cloned request
-    const bodyText = await clonedRequest.text()
+    // Use the body text from signature verification
+    const bodyText = signatureResult.bodyText
     console.log('Raw request body:', bodyText)
     
     if (!bodyText) {
@@ -171,10 +168,7 @@ export async function DELETE(request: NextRequest) {
     
     const { env } = getCloudflareContext()
     
-    // Clone the request to preserve the body for later use
-    const clonedRequest = request.clone()
-    
-    // Handle signature verification
+    // Handle signature verification and get body text
     const signatureResult = await handleWebhookSignature(
       request, 
       () => env.SANITY_WEBHOOK_SECRET.get()
@@ -190,8 +184,8 @@ export async function DELETE(request: NextRequest) {
     
     console.log('Signature verification passed')
 
-    // Parse the body from the cloned request
-    const bodyText = await clonedRequest.text()
+    // Use the body text from signature verification
+    const bodyText = signatureResult.bodyText
     console.log('Raw DELETE request body:', bodyText)
     
     if (!bodyText) {

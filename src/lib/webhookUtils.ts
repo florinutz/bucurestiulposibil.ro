@@ -6,34 +6,29 @@ export async function handleWebhookSignature(request: NextRequest, getSecret: ()
   try {
     const secret = await getSecret()
 
-    // Verify webhook signature if secret is configured
+    const bodyText = await request.text()
+
     if (secret) {
-      // Get the signature from the request header
       const signature = request.headers.get(SIGNATURE_HEADER_NAME)
       
       if (!signature) {
         console.error('No webhook signature header found')
-        return { success: false, error: 'Invalid signature', status: 401 }
+        return { success: false, error: 'Invalid signature', status: 401, bodyText: null }
       }
 
-      // Get the raw request body for signature verification
-      const clonedRequest = request.clone()
-      const bodyText = await clonedRequest.text()
-
-      // Use the official Sanity webhook toolkit for verification
       const isValid = await isValidSignature(bodyText, signature, secret)
       
       if (!isValid) {
         console.error('Invalid webhook signature')
-        return { success: false, error: 'Invalid signature', status: 401 }
+        return { success: false, error: 'Invalid signature', status: 401, bodyText: null }
       }
     } else {
       console.warn('No webhook secret configured, skipping signature verification')
     }
 
-    return { success: true }
+    return { success: true, bodyText }
   } catch (error) {
     console.error('Signature verification error:', error)
-    return { success: false, error: 'Signature verification failed', status: 500 }
+    return { success: false, error: 'Signature verification failed', status: 500, bodyText: null }
   }
 } 

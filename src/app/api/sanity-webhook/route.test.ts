@@ -28,12 +28,31 @@ vi.mock('@sanity/webhook', () => ({
   SIGNATURE_HEADER_NAME: 'sanity-webhook-signature',
 }))
 
-// Mock console to avoid noise in tests
-vi.mock('console', () => ({
-  log: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
-}))
+// Mock NextRequest.text() to return the body
+const mockText = vi.fn()
+const mockHeaders = new Map()
+vi.mock('next/server', async () => {
+  const actual = await vi.importActual('next/server')
+  return {
+    ...actual,
+    NextRequest: class MockNextRequest {
+      constructor(url: string, options?: { headers?: Record<string, string> }) {
+        // Mock constructor
+        if (options?.headers) {
+          Object.entries(options.headers).forEach(([key, value]) => {
+            mockHeaders.set(key, value)
+          })
+        }
+      }
+      text() {
+        return mockText()
+      }
+      get headers() {
+        return mockHeaders
+      }
+    }
+  }
+})
 
 // Mock console to avoid noise in tests
 vi.mock('console', () => ({
@@ -45,6 +64,9 @@ vi.mock('console', () => ({
 describe('/api/sanity-webhook', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockHeaders.clear()
+    // Default mock for request body
+    mockText.mockResolvedValue('{"_id":"test-pin-id","_type":"pin"}')
   })
 
   describe('POST', () => {
@@ -65,11 +87,14 @@ describe('/api/sanity-webhook', () => {
         approvedBy: 'admin',
       }
 
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
+
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'sanity-webhook-signature': '01020304' // matches the mocked signature
+          'sanity-webhook-signature': '01020304'
         },
         body: JSON.stringify(webhookData),
       })
@@ -96,13 +121,14 @@ describe('/api/sanity-webhook', () => {
         submittedBy: { name: 'Test User', email: 'test@example.com', ip: '127.0.0.1' },
       }
 
-      // Mock the signature verification to succeed
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'sanity-webhook-signature': '01020304' // matches the mocked signature
+          'sanity-webhook-signature': '01020304'
         },
         body: JSON.stringify(webhookData),
       })
@@ -129,13 +155,14 @@ describe('/api/sanity-webhook', () => {
         submittedBy: { name: 'Test User', email: 'test@example.com', ip: '127.0.0.1' },
       }
 
-      // Mock the signature verification to succeed
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'sanity-webhook-signature': '01020304' // matches the mocked signature
+          'sanity-webhook-signature': '01020304'
         },
         body: JSON.stringify(webhookData),
       })
@@ -148,7 +175,6 @@ describe('/api/sanity-webhook', () => {
     })
 
     it('should handle webhook without signature when no secret configured', async () => {
-      // This test would require more complex mocking, so we'll test the basic flow
       const webhookData: SanityPin = {
         _id: 'test-pin-id',
         _type: 'pin',
@@ -164,6 +190,9 @@ describe('/api/sanity-webhook', () => {
         approvedAt: '2025-01-01T00:00:00Z',
         approvedBy: 'admin',
       }
+
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
@@ -196,6 +225,9 @@ describe('/api/sanity-webhook', () => {
         approvedBy: 'admin',
       }
 
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
+
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
         headers: { 
@@ -221,13 +253,14 @@ describe('/api/sanity-webhook', () => {
         title: 'Other Document',
       }
 
-      // Mock the signature verification to succeed
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'sanity-webhook-signature': '01020304' // matches the mocked signature
+          'sanity-webhook-signature': '01020304'
         },
         body: JSON.stringify(webhookData),
       })
@@ -240,6 +273,9 @@ describe('/api/sanity-webhook', () => {
     })
 
     it('should handle malformed JSON gracefully', async () => {
+      // Mock malformed JSON body
+      mockText.mockResolvedValueOnce('invalid-json')
+
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
         headers: { 
@@ -264,13 +300,14 @@ describe('/api/sanity-webhook', () => {
         _type: 'pin',
       }
 
-      // Mock the signature verification to succeed
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(deleteData))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
-          'sanity-webhook-signature': '01020304' // matches the mocked signature
+          'sanity-webhook-signature': '01020304'
         },
         body: JSON.stringify(deleteData),
       })
@@ -288,13 +325,14 @@ describe('/api/sanity-webhook', () => {
         _type: 'other-document-type',
       }
 
-      // Mock the signature verification to succeed
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(deleteData))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
-          'sanity-webhook-signature': '01020304' // matches the mocked signature
+          'sanity-webhook-signature': '01020304'
         },
         body: JSON.stringify(deleteData),
       })
@@ -315,6 +353,9 @@ describe('/api/sanity-webhook', () => {
         _type: 'pin',
       }
 
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(deleteData))
+
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'DELETE',
         headers: { 
@@ -334,8 +375,6 @@ describe('/api/sanity-webhook', () => {
 
   describe('Signature Verification', () => {
     it('should verify valid HMAC-SHA256 signatures', async () => {
-      // Mock successful signature verification
-
       const webhookData: SanityPin = {
         _id: 'test-pin-id',
         _type: 'pin',
@@ -352,11 +391,14 @@ describe('/api/sanity-webhook', () => {
         approvedBy: 'admin',
       }
 
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
+
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'sanity-webhook-signature': '01020304' // matches the mocked signature
+          'sanity-webhook-signature': '01020304'
         },
         body: JSON.stringify(webhookData),
       })
@@ -384,6 +426,9 @@ describe('/api/sanity-webhook', () => {
         approvedAt: '2025-01-01T00:00:00Z',
         approvedBy: 'admin',
       }
+
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
