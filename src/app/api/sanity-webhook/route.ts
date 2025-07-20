@@ -5,7 +5,7 @@ import { handleWebhookSignature } from '@/lib/webhookUtils'
 
 export async function POST(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext()
+    const { env } = getCloudflareContext()
     
     // Handle signature verification
     const signatureResult = await handleWebhookSignature(
@@ -72,7 +72,7 @@ async function handlePinUpdate(sanityData: SanityPin) {
 
 async function upsertToD1(data: D1Pin) {
   try {
-    const { env } = await getCloudflareContext()
+    const { env } = getCloudflareContext()
     const db = env.DB as D1Database
     
     if (!db) {
@@ -112,7 +112,7 @@ async function upsertToD1(data: D1Pin) {
 
 async function deleteFromD1(id: string) {
   try {
-    const { env } = await getCloudflareContext()
+    const { env } = getCloudflareContext()
     const db = env.DB as D1Database
     
     if (!db) {
@@ -132,7 +132,7 @@ async function deleteFromD1(id: string) {
 // Handle DELETE webhooks (when documents are deleted from Sanity)
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext()
+    const { env } = getCloudflareContext()
     
     // Handle signature verification
     const signatureResult = await handleWebhookSignature(

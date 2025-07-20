@@ -25,7 +25,12 @@ export default defineType({
       name: 'location',
       title: 'Location',
       type: 'geopoint',
+      description: 'Click to select a location on the map or enter coordinates manually',
       validation: (Rule) => Rule.required(),
+      options: {
+        // This will show a map interface in Sanity Studio
+        // The default geopoint input includes a map view
+      }
     }),
     defineField({
       name: 'description',
