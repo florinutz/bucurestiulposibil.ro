@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { POST, DELETE } from './route'
 import { NextRequest } from 'next/server'
 import { SanityPin } from '@/types/geopoint'
+import { isValidSignature } from '@sanity/webhook'
 
 // Mock the Cloudflare context
 vi.mock('@opennextjs/cloudflare', () => ({
@@ -21,25 +22,18 @@ vi.mock('@opennextjs/cloudflare', () => ({
   })),
 }))
 
-// Mock crypto for signature verification
-const mockCrypto = {
-  subtle: {
-    importKey: vi.fn().mockResolvedValue('mock-key'),
-    sign: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3, 4])),
-  },
-}
+// Mock the Sanity webhook toolkit
+vi.mock('@sanity/webhook', () => ({
+  isValidSignature: vi.fn().mockResolvedValue(true),
+  SIGNATURE_HEADER_NAME: 'sanity-webhook-signature',
+}))
 
-Object.defineProperty(global, 'crypto', {
-  value: mockCrypto,
-  writable: true,
-})
-
-// Mock TextEncoder for signature verification
-global.TextEncoder = class {
-  encode(text: string) {
-    return new Uint8Array(Buffer.from(text, 'utf8'))
-  }
-} as typeof TextEncoder
+// Mock console to avoid noise in tests
+vi.mock('console', () => ({
+  log: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+}))
 
 // Mock console to avoid noise in tests
 vi.mock('console', () => ({
@@ -70,9 +64,6 @@ describe('/api/sanity-webhook', () => {
         approvedAt: '2025-01-01T00:00:00Z',
         approvedBy: 'admin',
       }
-
-      // Mock the signature verification to succeed
-      mockCrypto.subtle.sign.mockResolvedValueOnce(new Uint8Array([1, 2, 3, 4]))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
@@ -106,7 +97,6 @@ describe('/api/sanity-webhook', () => {
       }
 
       // Mock the signature verification to succeed
-      mockCrypto.subtle.sign.mockResolvedValueOnce(new Uint8Array([1, 2, 3, 4]))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
@@ -140,7 +130,6 @@ describe('/api/sanity-webhook', () => {
       }
 
       // Mock the signature verification to succeed
-      mockCrypto.subtle.sign.mockResolvedValueOnce(new Uint8Array([1, 2, 3, 4]))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
@@ -189,7 +178,7 @@ describe('/api/sanity-webhook', () => {
 
     it('should return 401 for invalid signature', async () => {
       // Mock signature verification to fail
-      mockCrypto.subtle.sign.mockRejectedValueOnce(new Error('Invalid signature'))
+      vi.mocked(isValidSignature).mockResolvedValueOnce(false)
 
       const webhookData: SanityPin = {
         _id: 'test-pin-id',
@@ -233,7 +222,6 @@ describe('/api/sanity-webhook', () => {
       }
 
       // Mock the signature verification to succeed
-      mockCrypto.subtle.sign.mockResolvedValueOnce(new Uint8Array([1, 2, 3, 4]))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'POST',
@@ -277,7 +265,6 @@ describe('/api/sanity-webhook', () => {
       }
 
       // Mock the signature verification to succeed
-      mockCrypto.subtle.sign.mockResolvedValueOnce(new Uint8Array([1, 2, 3, 4]))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'DELETE',
@@ -302,7 +289,6 @@ describe('/api/sanity-webhook', () => {
       }
 
       // Mock the signature verification to succeed
-      mockCrypto.subtle.sign.mockResolvedValueOnce(new Uint8Array([1, 2, 3, 4]))
 
       const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
         method: 'DELETE',
@@ -322,7 +308,7 @@ describe('/api/sanity-webhook', () => {
 
     it('should return 401 for invalid signature on DELETE', async () => {
       // Mock signature verification to fail
-      mockCrypto.subtle.sign.mockRejectedValueOnce(new Error('Invalid signature'))
+      vi.mocked(isValidSignature).mockResolvedValueOnce(false)
 
       const deleteData = {
         _id: 'test-pin-id',
@@ -349,7 +335,6 @@ describe('/api/sanity-webhook', () => {
   describe('Signature Verification', () => {
     it('should verify valid HMAC-SHA256 signatures', async () => {
       // Mock successful signature verification
-      mockCrypto.subtle.sign.mockResolvedValueOnce(new Uint8Array([1, 2, 3, 4]))
 
       const webhookData: SanityPin = {
         _id: 'test-pin-id',
