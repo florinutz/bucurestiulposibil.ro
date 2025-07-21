@@ -267,7 +267,9 @@ export default function MapPage({
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        if (showProposalForm) {
+        if (showProposalSuccess) {
+          setShowProposalSuccess(false);
+        } else if (showProposalForm) {
           setShowProposalForm(false);
         } else {
           collapseAll();
@@ -276,7 +278,7 @@ export default function MapPage({
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showProposalForm, collapseAll]);
+  }, [showProposalSuccess, showProposalForm, collapseAll]);
 
   // Focus search input when expanded
   useEffect(() => {
@@ -335,9 +337,8 @@ export default function MapPage({
       }
 
       console.log('Proposal submitted successfully:', result);
-      setShowProposalSuccess(true);
-      setTimeout(() => setShowProposalSuccess(false), 5000);
       setShowProposalForm(false);
+      setShowProposalSuccess(true);
       setProposalData({ title: '', description: '', name: '', email: '' });
       setSpecialPinCoords(null);
       
@@ -601,15 +602,83 @@ export default function MapPage({
         </div>
       )}
 
-      {/* Success Message */}
+      {/* Success Modal with Fireworks */}
       {showProposalSuccess && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
-          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Location submitted for review!</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          
+          {/* Fireworks Animation */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Firework 1 */}
+            <div className="absolute top-1/4 left-1/4 animate-ping">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+            </div>
+            <div className="absolute top-1/4 left-1/4 animate-ping" style={{ animationDelay: '0.5s' }}>
+              <div className="w-1 h-1 bg-red-400 rounded-full"></div>
+            </div>
+            
+            {/* Firework 2 */}
+            <div className="absolute top-1/3 right-1/4 animate-ping" style={{ animationDelay: '0.3s' }}>
+              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+            </div>
+            <div className="absolute top-1/3 right-1/4 animate-ping" style={{ animationDelay: '0.8s' }}>
+              <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+            </div>
+            
+            {/* Firework 3 */}
+            <div className="absolute bottom-1/3 left-1/3 animate-ping" style={{ animationDelay: '0.7s' }}>
+              <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+            </div>
+            <div className="absolute bottom-1/3 left-1/3 animate-ping" style={{ animationDelay: '1.2s' }}>
+              <div className="w-1 h-1 bg-pink-400 rounded-full"></div>
+            </div>
+            
+            {/* Firework 4 */}
+            <div className="absolute top-1/2 right-1/3 animate-ping" style={{ animationDelay: '1s' }}>
+              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+            </div>
+            <div className="absolute top-1/2 right-1/3 animate-ping" style={{ animationDelay: '1.5s' }}>
+              <div className="w-1 h-1 bg-yellow-300 rounded-full"></div>
+            </div>
+            
+            {/* Firework 5 */}
+            <div className="absolute bottom-1/4 right-1/4 animate-ping" style={{ animationDelay: '0.2s' }}>
+              <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+            </div>
+            <div className="absolute bottom-1/4 right-1/4 animate-ping" style={{ animationDelay: '0.9s' }}>
+              <div className="w-1 h-1 bg-indigo-400 rounded-full"></div>
+            </div>
+          </div>
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+            {/* Success Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center animate-bounce">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            
+            {/* Success Message */}
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Thank You! 🎉</h3>
+              <p className="text-gray-600">
+                Your location has been successfully submitted for review. 
+                We&apos;ll notify you once it&apos;s approved and added to the map!
+              </p>
+            </div>
+            
+            {/* Close Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowProposalSuccess(false)}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                Awesome!
+              </button>
             </div>
           </div>
         </div>
