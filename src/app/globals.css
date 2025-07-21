@@ -113,3 +113,13 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+
+/* Grayscale map effect */
+.leaflet-container.grayscale {
+  filter: grayscale(1);
+}
+
+/* Only make the map tiles grayscale, not the whole map container */
+.leaflet-tile-pane img {
+  filter: grayscale(1);
+}

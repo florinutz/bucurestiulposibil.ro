@@ -12,8 +12,8 @@ interface MapProps {
 }
 
 export default function Map({ 
-  center = [44.4268, 26.1025], // Bucharest coordinates
-  zoom = 11,
+  center = [44.4268, 26.1025], // Bucharest center coordinates
+  zoom = 12,
   className = "w-full h-full",
   onSpecialPinPlaced,
   specialPinCoords
@@ -56,11 +56,20 @@ export default function Map({
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         });
 
-        // Create map
+        // Create map with Bucharest bounds
         if (!mapRef.current) return;
-        const map = L.map(mapRef.current, { zoomControl: false }).setView(center, zoom);
+        const map = L.map(mapRef.current, { 
+          zoomControl: false,
+          minZoom: 11,
+          maxZoom: 17,
+          maxBounds: [
+            [44.330819, 25.933960], // Southwest corner (Bucharest bounds, bottom left)
+            [44.552407, 26.258057]  // Northeast corner (Bucharest bounds, top right)
+          ],
+          maxBoundsViscosity: 1.0 // Hard limit to bounds
+        }).setView(center, zoom);
         mapInstanceRef.current = map;
-        console.log('Map created');
+        console.log('Map created with Bucharest bounds');
 
         // Add zoom control to bottom right
         L.control.zoom({ position: 'bottomright' }).addTo(map);
