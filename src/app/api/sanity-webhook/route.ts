@@ -3,6 +3,24 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { SanityPin, D1Pin } from '@/types/geopoint'
 import { handleWebhookSignature } from '@/lib/webhookUtils'
 
+/**
+ * Sanity Webhook Handler
+ * 
+ * This webhook maintains perfect sync between Sanity CMS and D1 database:
+ * 
+ * SYNC RULES:
+ * - Only pins with status 'approved' are kept in D1
+ * - Any pin with status other than 'approved' is removed from D1
+ * - This includes: 'pending', 'rejected', or any unknown status
+ * - When a pin is deleted from Sanity, it's also removed from D1
+ * 
+ * WEBHOOK EVENTS HANDLED:
+ * - POST: Pin created/updated (syncs based on approval status)
+ * - DELETE: Pin deleted (removes from D1)
+ * 
+ * This ensures D1 only contains currently approved pins that should be displayed on the map.
+ */
+
 export async function POST(request: NextRequest) {
   try {
     console.log('Request headers:', Object.fromEntries(request.headers.entries()))
@@ -71,17 +89,20 @@ export async function POST(request: NextRequest) {
 }
 
 async function handlePinUpdate(sanityData: SanityPin) {
-  // Only sync approved pins to D1
+  console.log(`Processing pin ${sanityData._id} with status: ${sanityData.status}`)
+  
+  // SYNC RULE: Only approved pins stay in D1
+  // Any pin that is not 'approved' gets removed from D1
+  // This handles: pending → approved, approved → rejected, approved → pending, etc.
   if (sanityData.status !== 'approved') {
-    console.log(`Pin ${sanityData._id} is not approved, skipping D1 sync`)
-    
-    // If it was previously approved but now rejected/pending, remove from D1
-    if (sanityData.status === 'rejected' || sanityData.status === 'pending') {
-      await deleteFromD1(sanityData._id)
-    }
+    console.log(`Pin ${sanityData._id} is not approved (status: ${sanityData.status}), removing from D1`)
+    await deleteFromD1(sanityData._id)
     return
   }
 
+  // Pin is approved - sync to D1
+  console.log(`Pin ${sanityData._id} is approved, syncing to D1`)
+  
   // Convert Sanity data to D1 format
   const d1Data: D1Pin = {
     id: sanityData._id,
@@ -160,6 +181,12 @@ async function deleteFromD1(id: string) {
 
 // Handle DELETE webhooks (when documents are deleted from Sanity)
 export async function DELETE(request: NextRequest) {
+  /**
+   * Handles Sanity DELETE webhook events:
+   * - If the deleted document is a pin (type === 'pin') and has an _id, remove it from D1.
+   * - If the type is not 'pin' or _id is missing, ignore the event (no accidental deletes).
+   * - Handles signature verification and malformed body gracefully.
+   */
   try {
     console.log('=== SANITY DELETE WEBHOOK DEBUG ===')
     console.log('Request URL:', request.url)
@@ -212,8 +239,9 @@ export async function DELETE(request: NextRequest) {
     if (body._type === 'pin' && body._id) {
       console.log(`Processing pin DELETE webhook for ID: ${body._id}`)
       await deleteFromD1(body._id)
+      console.log(`Successfully processed DELETE webhook for pin ${body._id}`)
     } else {
-      console.log(`Ignoring DELETE webhook for type: ${body._type}`)
+      console.log(`Ignoring DELETE webhook for non-pin type: ${body._type}`)
     }
 
     console.log('=== DELETE WEBHOOK PROCESSING COMPLETE ===')

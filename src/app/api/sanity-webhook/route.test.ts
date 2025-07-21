@@ -106,7 +106,7 @@ describe('/api/sanity-webhook', () => {
       expect(data.success).toBe(true)
     })
 
-    it('should skip D1 sync for non-approved pins', async () => {
+    it('should remove non-approved pins from D1', async () => {
       const webhookData: SanityPin = {
         _id: 'test-pin-id',
         _type: 'pin',
@@ -140,7 +140,7 @@ describe('/api/sanity-webhook', () => {
       expect(data.success).toBe(true)
     })
 
-    it('should delete from D1 when pin is rejected', async () => {
+    it('should remove rejected pins from D1', async () => {
       const webhookData: SanityPin = {
         _id: 'test-pin-id',
         _type: 'pin',
@@ -272,6 +272,40 @@ describe('/api/sanity-webhook', () => {
       expect(data.success).toBe(true)
     })
 
+    it('should remove pins with unknown status from D1', async () => {
+      const webhookData: SanityPin = {
+        _id: 'test-pin-id',
+        _type: 'pin',
+        _createdAt: '2025-01-01T00:00:00Z',
+        _updatedAt: '2025-01-01T00:00:00Z',
+        _rev: 'test-rev',
+        title: 'Test Point',
+        slug: { current: 'test-point' },
+        location: { lat: 48.8566, lng: 2.3522 },
+        description: 'Test description',
+        status: 'unknown-status' as 'pending' | 'approved' | 'rejected',
+        submittedBy: { name: 'Test User', email: 'test@example.com', ip: '127.0.0.1' },
+      }
+
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
+
+      const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'sanity-webhook-signature': '01020304'
+        },
+        body: JSON.stringify(webhookData),
+      })
+
+      const response = await POST(request)
+      const data = await response.json() as { success: boolean }
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+    })
+
     it('should handle malformed JSON gracefully', async () => {
       // Mock malformed JSON body
       mockText.mockResolvedValueOnce('invalid-json')
@@ -323,6 +357,31 @@ describe('/api/sanity-webhook', () => {
       const deleteData = {
         _id: 'test-other-id',
         _type: 'other-document-type',
+      }
+
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(deleteData))
+
+      const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json',
+          'sanity-webhook-signature': '01020304'
+        },
+        body: JSON.stringify(deleteData),
+      })
+
+      const response = await DELETE(request)
+      const data = await response.json() as { success: boolean }
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+    })
+
+    it('should handle DELETE webhook with missing _id gracefully', async () => {
+      const deleteData = {
+        _type: 'pin',
+        // _id is missing
       }
 
       // Mock the request body
