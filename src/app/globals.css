@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Ensure map container takes full height */
+#__next {
+  height: 100vh;
+}
+
+/* Leaflet map specific styles */
+.leaflet-container {
+  height: 100vh !important;
+  width: 100vw !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* Custom marker styles */
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-marker div {
+  transition: transform 0.2s ease;
+}
+
+.custom-marker:hover div {
+  transform: scale(1.1);
+}
+
+/* Special pin marker styles */
+.special-pin-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.special-pin-marker div {
+  transition: transform 0.2s ease;
+  animation: wobble 1.5s ease-in-out 3;
+}
+
+.special-pin-marker:hover div {
+  transform: scale(1.1);
+  animation: none;
+}
+
+/* Custom wobble animation */
+@keyframes wobble {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.2);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  75% {
+    transform: scale(1.15);
+  }
+}
+
+.animate-wobble {
+  animation: wobble 1.5s ease-in-out 3;
+}
+
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure popups always appear on top of interface elements */
+.leaflet-popup {
+  z-index: 10000 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  z-index: 10000 !important;
+}
+
+.leaflet-popup-tip {
+  z-index: 10000 !important;
+}
+
+/* Ensure popups are always fully visible */
+.leaflet-popup {
+  max-width: 90vw !important;
+  max-height: 80vh !important;
+}
+
+.leaflet-popup-content-wrapper {
+  max-width: 90vw !important;
+  max-height: 80vh !important;
+  overflow: auto !important;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Grayscale map effect */
+.leaflet-container.grayscale {
+  filter: grayscale(1);
+}
+
+/* Only make the map tiles grayscale, not the whole map container */
+.leaflet-tile-pane img {
+  filter: grayscale(1);
+}
+
+/* Green tint for map tiles to match logo color #209D50 */
+.map-green-tint .leaflet-tile-pane img {
+  filter: hue-rotate(120deg) saturate(1.5) brightness(0.8) !important;
+}
