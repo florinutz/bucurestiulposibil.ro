@@ -11,19 +11,15 @@
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
-	"assets": {
-		"binding": "ASSETS",
-		"directory": ".open-next/assets"
-	},
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
 	 */
-	// "placement": { "mode": "smart" },
+	"placement": { "mode": "smart" },
 
 	/**
 	 * Bindings
@@ -36,17 +32,56 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
+	"vars": {
+		"NEXT_PUBLIC_SANITY_PROJECT_ID": "dxicn1kk",
+		"NEXT_PUBLIC_SANITY_DATASET": "production"
+	},
+	// build time vars:
+	"define": {
+		"NEXT_PUBLIC_SANITY_PROJECT_ID": "dxicn1kk",
+		"NEXT_PUBLIC_SANITY_DATASET": "production"
+	},
+
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
+	"secrets_store_secrets": [
+		{
+			"binding": "SANITY_API_TOKEN",
+			"secret_name": "SANITY_API_TOKEN",
+			"store_id": "d9e7888d67544bf49ce170835bb659bd"
+		},
+		{
+			"binding": "SANITY_WEBHOOK_SECRET",
+			"secret_name": "SANITY_WEBHOOK_SECRET",
+			"store_id": "d9e7888d67544bf49ce170835bb659bd"
+		}
+	],
 
 	/**
 	 * Static Assets
 	 * https://developers.cloudflare.com/workers/static-assets/binding/
 	 */
-	// "assets": { "directory": "./public/", "binding": "ASSETS" },
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".open-next/assets"
+	},
+
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "dots",
+			"database_id": "a4d6a7b1-0bdd-4efa-8eec-41b0ab90c474"
+		}
+	],
+
+	"routes": [
+		{
+			"pattern": "bucurestiulposibil.ro",
+			"custom_domain": true
+		}
+	]
 
 	/**
 	 * Service Bindings (communicate between multiple Workers)
