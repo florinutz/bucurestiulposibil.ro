@@ -257,7 +257,7 @@ export default function MapPage({
   // Add location button handler
   const handleAddLocationClick = useCallback(() => {
     if (!specialPinCoords) {
-      alert('Please click on the paris first to place a pin, then click the + button to add a location.');
+      alert('Please click on the map first to place a pin, then click the + button to add a location.');
       return;
     }
     setShowProposalForm(true);
