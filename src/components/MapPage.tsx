@@ -483,7 +483,7 @@ export default function MapPage({
               ? 'bg-green-500 hover:bg-green-600 text-white border-green-600 cursor-pointer' 
               : 'bg-white/90 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-white'
           } ${specialPinCoords ? 'animate-wobble' : ''}`}
-          title={specialPinCoords ? "Add location at pinned coordinates" : "Click on paris first to place a pin"}
+          title={specialPinCoords ? "Add location at pinned coordinates" : "Click on map first to place a pin"}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
