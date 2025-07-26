@@ -74,6 +74,13 @@
 			"database_name": "dots",
 			"database_id": "a4d6a7b1-0bdd-4efa-8eec-41b0ab90c474"
 		}
+	],
+
+	"routes": [
+		{
+			"pattern": "bucurestiulposibil.ro",
+			"custom_domain": true
+		}
 	]
 
 	/**
