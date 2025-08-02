@@ -7,13 +7,11 @@ import Image from 'next/image';
 interface MapPageProps {
   initialCenter?: [number, number];
   initialZoom?: number;
-  title?: string;
 }
 
 export default function MapPage({ 
   initialCenter = [44.4268, 26.1025], // Bucharest center coordinates
-  initialZoom = 12,
-  title = "Interactive Map"
+  initialZoom = 12
 }: MapPageProps) {
   const [center, setCenter] = useState<[number, number]>(initialCenter);
   const [zoom, setZoom] = useState(initialZoom);
@@ -410,13 +408,13 @@ export default function MapPage({
 
       <div className="pointer-events-none fixed top-4 left-4 z-20 max-w-xs w-[90vw]">
         {/* Clickable Logo */}
-        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4">
+        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3">
           <button onClick={handleLogoClick} className="cursor-pointer">
             <Image 
               src="/BP-logo-site.png" 
               alt="Bucureștiul Posibil" 
-              width={200} 
-              height={60}
+              width={150} 
+              height={45}
               className="h-auto max-w-full"
             />
           </button>
@@ -483,7 +481,7 @@ export default function MapPage({
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
               <li>• Așază pin-ul cu un click/apasare pe locația dorită de pe hartă</li>
-              <li>• Odată ce pin-ul este așezat pe locația dorită apasă pe butonul „+" din colțul dreapta sus al ecranului</li>
+              <li>• Odată ce pin-ul este așezat pe locația dorită apasă pe butonul &ldquo;+&rdquo; din colțul dreapta sus al ecranului</li>
               <li>• Introdu detaliile opționale</li>
               <li>• Pin-urile vor apărea pe hartă imediat ce vor fi aprobate de un moderator</li>
             </ul>
@@ -745,7 +743,7 @@ export default function MapPage({
             <div className="text-center mb-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Bucureștiul Posibil</h3>
               <p className="text-gray-600 leading-relaxed">
-                Pentru a propune o locație pentru proiectul „Bucureștiul posibil" pune un pin pe hartă pe locația pe care ți-o dorești, și apoi apasă pe butonul „+" din colțul dreapta sus al ecranului. Mulțumim!
+                Pentru a propune o locație pentru proiectul &ldquo;Bucureștiul posibil&rdquo; pune un pin pe hartă pe locația pe care ți-o dorești, și apoi apasă pe butonul &ldquo;+&rdquo; din colțul dreapta sus al ecranului. Mulțumim!
               </p>
             </div>
             <div className="flex justify-center">
@@ -782,7 +780,7 @@ export default function MapPage({
             {/* Project information */}
             <div className="text-center mb-6">
               <p className="text-gray-700 leading-relaxed">
-                „Bucureștiul posibil" este un proiect desfășurat de Asociația Străzi pentru Oameni și este co-finanțat de Administrația Fondului Cultural Național – AFCN.
+                &ldquo;Bucureștiul posibil&rdquo; este un proiect desfășurat de <a href="https://strazipentruoameni.net/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Asociația Străzi pentru Oameni</a> și este co-finanțat de Administrația Fondului Cultural Național – AFCN.
                 <br /><br />
                 Proiectul nu reprezintă în mod necesar poziția Administrației Fondului Cultural Național. AFCN nu este responsabilă de conținutul proiectului sau de modul în care rezultatele proiectului pot fi folosite. Acestea sunt în întregime responsabilitatea beneficiarului finanțării.
               </p>

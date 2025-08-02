@@ -123,3 +123,8 @@ body {
 .leaflet-tile-pane img {
   filter: grayscale(1);
 }
+
+/* Green tint for map tiles to match logo color #209D50 */
+.map-green-tint .leaflet-tile-pane img {
+  filter: hue-rotate(120deg) saturate(1.5) brightness(0.8) !important;
+}

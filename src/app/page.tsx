@@ -17,7 +17,6 @@ export default function Home() {
     <MapPage 
       initialCenter={[44.4268, 26.1025]} // Bucharest coordinates
       initialZoom={13}
-      title="Harta Chestiilor - Pinuri Interactive"
     />
   );
 }
