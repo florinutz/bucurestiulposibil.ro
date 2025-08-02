@@ -96,9 +96,9 @@ export default function Map({
           })
             .addTo(map)
             .bindPopup(`
-              <div class="p-2">
-                <h3 class="font-semibold text-lg">${location.title}</h3>
-                <p class="text-gray-600">${location.description}</p>
+              <div class="p-3" style="min-width: 250px; max-width: 300px;">
+                <h3 class="font-semibold text-lg mb-2">${location.title}</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">${location.description}</p>
               </div>
             `);
           locationMarkersRef.current.push(marker);
@@ -226,9 +226,9 @@ export default function Map({
           })
             .addTo(map)
             .bindPopup(`
-              <div class="p-2">
-                <h3 class="font-semibold text-lg">${location.title}</h3>
-                <p class="text-gray-600">${location.description}</p>
+              <div class="p-3" style="min-width: 250px; max-width: 300px;">
+                <h3 class="font-semibold text-lg mb-2">${location.title}</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">${location.description}</p>
               </div>
             `);
           

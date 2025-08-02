@@ -395,6 +395,17 @@ export default function MapPage({
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
+      {/* Preload image for logo popup */}
+      <div className="hidden">
+        <Image 
+          src="/SpO-si-AFCN.jpg" 
+          alt="Preload" 
+          width={400} 
+          height={200}
+          priority
+        />
+      </div>
+      
       {/* Map rendered first, z-0 */}
       <div className="absolute inset-0 z-0">
         <Map 
@@ -406,10 +417,10 @@ export default function MapPage({
         />
       </div>
 
-      <div className="pointer-events-none fixed top-4 left-4 z-20 max-w-xs w-[90vw]">
+      <div className="pointer-events-none fixed top-4 left-4 z-20">
         {/* Clickable Logo */}
-        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3">
-          <button onClick={handleLogoClick} className="cursor-pointer">
+        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 inline-block">
+          <button onClick={handleLogoClick} className="cursor-pointer block">
             <Image 
               src="/BP-logo-site.png" 
               alt="Bucureștiul Posibil" 
