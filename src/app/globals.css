@@ -96,6 +96,31 @@ body {
   padding: 0 !important;
 }
 
+/* Ensure popups always appear on top of interface elements */
+.leaflet-popup {
+  z-index: 10000 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  z-index: 10000 !important;
+}
+
+.leaflet-popup-tip {
+  z-index: 10000 !important;
+}
+
+/* Ensure popups are always fully visible */
+.leaflet-popup {
+  max-width: 90vw !important;
+  max-height: 80vh !important;
+}
+
+.leaflet-popup-content-wrapper {
+  max-width: 90vw !important;
+  max-height: 80vh !important;
+  overflow: auto !important;
+}
+
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
   width: 8px;
