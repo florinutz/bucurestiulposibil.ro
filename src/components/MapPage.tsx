@@ -605,7 +605,7 @@ export default function MapPage({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email (opțional: dacă îți dorești să fii informat dacă locația propusă de tine este una din ele alese să facă parte din proiect):
+                    Email (opțional):
                   </label>
                   <input
                     type="email"
@@ -617,16 +617,20 @@ export default function MapPage({
                   />
                 </div>
               </div>
-              
+
               {submitError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                   <div className="text-sm text-red-700">{submitError}</div>
                 </div>
               )}
-              
-              <div className="text-sm text-gray-600">
-                Coordinates: {specialPinCoords?.[0].toFixed(6)}, {specialPinCoords?.[1].toFixed(6)}
+
+              <div>
+                Daca ne dai adresa email, vei fi informat dacă locația propusă de tine este una din cele alese să facă parte din proiect
               </div>
+
+              {/*<div className="text-sm text-gray-600">*/}
+              {/*  Coordinates: {specialPinCoords?.[0].toFixed(6)}, {specialPinCoords?.[1].toFixed(6)}*/}
+              {/*</div>*/}
               <div className="text-xs text-gray-500">
                 Propunerea ta va fi analizată de moderatori înainte de a apărea pe hartă.
               </div>
