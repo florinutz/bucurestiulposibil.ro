@@ -7,6 +7,7 @@ export interface Location {
   status: 'approved' | 'pending' | 'rejected';
   createdAt: Date;
   createdBy?: string;
+  submittedByName?: string;
 }
 
 export interface LocationProposal {
@@ -26,8 +27,13 @@ interface D1Pin {
   description: string;
   lat: number;
   lng: number;
+  submitted_by_name?: string | null;
+  submitted_by_email?: string | null;
+  submitted_by_ip?: string | null;
   created_at: string;
   updated_at: string;
+  approved_at?: string | null;
+  approved_by?: string | null;
 }
 
 // In-memory storage for demo purposes
@@ -53,7 +59,8 @@ class LocationStore {
             lng: point.lng,
             status: 'approved' as const,
             createdAt: new Date(point.created_at),
-            createdBy: 'system'
+            createdBy: 'system',
+            submittedByName: point.submitted_by_name || undefined
           }));
           this.isLoaded = true;
           console.log('Loaded locations from D1:', this.locations.length);
