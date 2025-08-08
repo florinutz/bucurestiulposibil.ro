@@ -13,10 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Modern Next.js App | Cloudflare Workers",
-  description: "A beautiful, responsive Next.js application deployed on Cloudflare Workers with modern design and optimal performance.",
-  keywords: ["Next.js", "Cloudflare", "React", "Web Development", "Modern Web"],
-  authors: [{ name: "Next.js Developer" }],
+  title: "Bucureștiul posibil",
+  description: "Vrem un oraș care respiră. Un București în care spațiul public aparține și este accesibil oamenilor în loc să fie sufocat de betoane și mașini. " +
+    "Un București care schimbă asfaltul încins în copaci umbroși, claxoanele în conversații și nervii din trafic în locuri care ne aduc împreună.",
+  keywords: ["București", "oraș pentru oameni", "new urbanism", "VR", "360", "pietoni", "pietonală"],
+  authors: [{ name: "Liviu Bǎrbulescu" }],
 };
 
 export const viewport = {

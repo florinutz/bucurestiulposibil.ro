@@ -86,21 +86,19 @@ export default function Map({
         // Add initial location markers
         const locations = locationStore.getLocations();
         locations.forEach(location => {
-          const marker = L.marker([location.lat, location.lng])
+          const marker = L.marker([location.lat, location.lng], {
+            icon: L.icon({
+              iconUrl: '/pin.png',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+              popupAnchor: [0, -32]
+            })
+          })
             .addTo(map)
             .bindPopup(`
-              <div class="p-2">
-                <h3 class="font-semibold text-lg">${location.title}</h3>
-                <p class="text-gray-600">${location.description}</p>
-                <div class="mt-2">
-                  <span class="inline-block px-2 py-1 text-xs rounded-full ${
-                    location.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    location.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }">
-                    ${location.status}
-                  </span>
-                </div>
+              <div class="p-3" style="min-width: 250px; max-width: 300px;">
+                <h3 class="font-semibold text-lg mb-2">${location.title}</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">${location.description}</p>
               </div>
             `);
           locationMarkersRef.current.push(marker);
@@ -218,21 +216,19 @@ export default function Map({
       locations.forEach(location => {
         // Only add if not already added
         if (!addedLocationIdsRef.current.has(location.id)) {
-          const marker = L.marker([location.lat, location.lng])
+          const marker = L.marker([location.lat, location.lng], {
+            icon: L.icon({
+              iconUrl: '/pin.png',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+              popupAnchor: [0, -32]
+            })
+          })
             .addTo(map)
             .bindPopup(`
-              <div class="p-2">
-                <h3 class="font-semibold text-lg">${location.title}</h3>
-                <p class="text-gray-600">${location.description}</p>
-                <div class="mt-2">
-                  <span class="inline-block px-2 py-1 text-xs rounded-full ${
-                    location.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    location.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }">
-                    ${location.status}
-                  </span>
-                </div>
+              <div class="p-3" style="min-width: 250px; max-width: 300px;">
+                <h3 class="font-semibold text-lg mb-2">${location.title}</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">${location.description}</p>
               </div>
             `);
           
@@ -266,7 +262,7 @@ export default function Map({
       <div className="relative w-full h-full">
         <div 
           ref={mapRef} 
-          className={className}
+          className={`${className} map-green-tint`}
           data-testid="map-container"
           style={{ minHeight: '100vh' }}
         />

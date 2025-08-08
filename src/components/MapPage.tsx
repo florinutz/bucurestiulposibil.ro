@@ -2,17 +2,16 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Map from './Map';
+import Image from 'next/image';
 
 interface MapPageProps {
   initialCenter?: [number, number];
   initialZoom?: number;
-  title?: string;
 }
 
 export default function MapPage({ 
   initialCenter = [44.4268, 26.1025], // Bucharest center coordinates
-  initialZoom = 12,
-  title = "Interactive Map"
+  initialZoom = 12
 }: MapPageProps) {
   const [center, setCenter] = useState<[number, number]>(initialCenter);
   const [zoom, setZoom] = useState(initialZoom);
@@ -48,6 +47,34 @@ export default function MapPage({
 
   // Help box state
   const [showHelp, setShowHelp] = useState(false);
+
+  // New popup states
+  const [showSiteLoadPopup, setShowSiteLoadPopup] = useState(false);
+  const [showLogoPopup, setShowLogoPopup] = useState(false);
+  const siteLoadPopupRef = useRef<HTMLDivElement>(null);
+  const logoPopupRef = useRef<HTMLDivElement>(null);
+
+  // Check for site load popup on mount
+  useEffect(() => {
+    const lastShown = localStorage.getItem('site-load-popup-last-shown');
+    const now = new Date().getTime();
+    const oneMonth = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+    
+    if (!lastShown || (now - parseInt(lastShown)) > oneMonth) {
+      setShowSiteLoadPopup(true);
+    }
+  }, []);
+
+  // Handle site load popup dismiss
+  const handleSiteLoadPopupDismiss = useCallback(() => {
+    setShowSiteLoadPopup(false);
+    localStorage.setItem('site-load-popup-last-shown', new Date().getTime().toString());
+  }, []);
+
+  // Handle logo click
+  const handleLogoClick = useCallback(() => {
+    setShowLogoPopup(true);
+  }, []);
 
   // Function to collapse both search and help
   const collapseAll = useCallback(() => {
@@ -206,7 +233,7 @@ export default function MapPage({
   // GPS button handler with improved error handling
   const handleGPSLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.');
+      alert('Geolocalizarea nu este suportată de acest browser.');
       return;
     }
 
@@ -231,16 +258,16 @@ export default function MapPage({
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            alert('Location access denied. Please enable location permissions in your browser settings and try again.');
+            alert('Accesul la locație a fost refuzat. Te rog să activezi permisiunile de locație în setările browserului și să încerci din nou.');
             break;
           case error.POSITION_UNAVAILABLE:
-            alert('Location information is unavailable. Please check your device settings and try again.');
+            alert('Informațiile despre locație nu sunt disponibile. Te rog să verifici setările dispozitivului și să încerci din nou.');
             break;
           case error.TIMEOUT:
-            alert('Location request timed out. Please try again or check your internet connection.');
+            alert('Cererea pentru locație a expirat. Te rog să încerci din nou sau să verifici conexiunea la internet.');
             break;
           default:
-            alert('An unknown error occurred while getting your location. Please try again.');
+            alert('A apărut o eroare necunoscută în obținerea locației tale. Te rog să încerci din nou.');
             break;
         }
       },
@@ -257,17 +284,21 @@ export default function MapPage({
   // Add location button handler
   const handleAddLocationClick = useCallback(() => {
     if (!specialPinCoords) {
-      alert('Please click on the map first to place a pin, then click the + button to add a location.');
+      alert('Te rog să faci click pe hartă mai întâi pentru a plasa un pin, apoi apasă butonul + pentru a adăuga o locație.');
       return;
     }
     setShowProposalForm(true);
   }, [specialPinCoords]);
 
-  // ESC key closes modal and collapses search/help
+  // ESC key closes modals and collapses search/help
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        if (showProposalSuccess) {
+        if (showSiteLoadPopup) {
+          handleSiteLoadPopupDismiss();
+        } else if (showLogoPopup) {
+          setShowLogoPopup(false);
+        } else if (showProposalSuccess) {
           setShowProposalSuccess(false);
         } else if (showProposalForm) {
           setShowProposalForm(false);
@@ -278,7 +309,7 @@ export default function MapPage({
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showProposalSuccess, showProposalForm, collapseAll]);
+  }, [showSiteLoadPopup, showLogoPopup, showProposalSuccess, showProposalForm, collapseAll, handleSiteLoadPopupDismiss]);
 
   // Focus search input when expanded
   useEffect(() => {
@@ -294,10 +325,22 @@ export default function MapPage({
     }
   }, [showProposalForm]);
 
-  // Backdrop click closes modal
-  const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  // Backdrop click handlers for modals
+  const handleProposalBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (e.target === proposalDialogRef.current) {
       setShowProposalForm(false);
+    }
+  }, []);
+
+  const handleSiteLoadBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (e.target === siteLoadPopupRef.current) {
+      handleSiteLoadPopupDismiss();
+    }
+  }, [handleSiteLoadPopupDismiss]);
+
+  const handleLogoBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (e.target === logoPopupRef.current) {
+      setShowLogoPopup(false);
     }
   }, []);
 
@@ -352,6 +395,17 @@ export default function MapPage({
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
+      {/* Preload image for logo popup */}
+      <div className="hidden">
+        <Image 
+          src="/SpO-si-AFCN.jpg" 
+          alt="Preload" 
+          width={400} 
+          height={200}
+          priority
+        />
+      </div>
+      
       {/* Map rendered first, z-0 */}
       <div className="absolute inset-0 z-0">
         <Map 
@@ -363,11 +417,18 @@ export default function MapPage({
         />
       </div>
 
-      {/* Overlay UI: stacked column, pointer-events-none on container, z-20 */}
-      <div className="pointer-events-none fixed top-4 left-4 z-20 max-w-xs w-[90vw]">
-        {/* Title - single row, no left margin */}
-        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis">{title}</h1>
+      <div className="pointer-events-none fixed top-4 left-4 z-20">
+        {/* Clickable Logo */}
+        <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 inline-block">
+          <button onClick={handleLogoClick} className="cursor-pointer block">
+            <Image 
+              src="/BP-logo-site.png" 
+              alt="Bucureștiul Posibil" 
+              width={150} 
+              height={45}
+              className="h-auto max-w-full"
+            />
+          </button>
         </div>
       </div>
 
@@ -379,7 +440,7 @@ export default function MapPage({
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Search locations..."
+              placeholder="Caută locații..."
               value={searchQuery}
               onChange={handleSearchChange}
               className="w-full px-4 py-2 pr-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -407,7 +468,7 @@ export default function MapPage({
           <button
             onClick={() => setShowSearch(true)}
             className="p-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 hover:bg-white transition-colors cursor-pointer"
-            title="Search locations"
+            title="Caută locație"
             style={{ marginBottom: 0 }}
           >
             <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,7 +480,7 @@ export default function MapPage({
         {showHelp ? (
           <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-sm">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-gray-800">How to use:</h3>
+              <h3 className="font-semibold text-gray-800">Cum folosești harta:</h3>
               <button
                 onClick={() => setShowHelp(false)}
                 className="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
@@ -430,18 +491,17 @@ export default function MapPage({
               </button>
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>• <strong>Search:</strong> Use the search box to find locations</li>
-              <li>• <strong>GPS:</strong> Click the location button to find your position</li>
-              <li>• <strong>Place Pin:</strong> Click anywhere on the map to place a red pin</li>
-              <li>• <strong>Add Location:</strong> Click the + button to add a location at the pin</li>
-              <li>• <strong>View:</strong> Click on existing pins to see location details</li>
+              <li>• Așază pin-ul cu un click/apasare pe locația dorită de pe hartă</li>
+              <li>• Odată ce pin-ul este așezat pe locația dorită apasă pe butonul &ldquo;+&rdquo; din colțul dreapta sus al ecranului</li>
+              <li>• Introdu detaliile opționale</li>
+              <li>• Pin-urile vor apărea pe hartă imediat ce vor fi aprobate de un moderator</li>
             </ul>
           </div>
         ) : (
           <button
             onClick={() => setShowHelp(true)}
             className="p-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 hover:bg-white transition-colors cursor-pointer"
-            title="Show help"
+            title="Ajutor"
           >
             <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -458,7 +518,7 @@ export default function MapPage({
               ? 'bg-blue-500 text-white border-blue-600 cursor-not-allowed' 
               : 'bg-white/90 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-white cursor-pointer'
           } ${specialPinCoords ? 'animate-wobble' : ''}`}
-          title={isLocating ? "Locating..." : "Find my location"}
+          title={isLocating ? "Localizare..." : "Locația mea actuală"}
           style={{ marginBottom: 0 }}
         >
           {isLocating ? (
@@ -496,14 +556,14 @@ export default function MapPage({
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
           ref={proposalDialogRef}
-          onClick={handleBackdropClick}
+          onClick={handleProposalBackdropClick}
         >
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4">Add New Location</h3>
+            <h3 className="text-lg font-semibold mb-4">Propune o nouă locație</h3>
             <form onSubmit={handleProposalSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
+                  Titlu:
                 </label>
                 <input
                   type="text"
@@ -512,12 +572,12 @@ export default function MapPage({
                   value={proposalData.title}
                   onChange={(e) => setProposalData({ ...proposalData, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="Enter location title"
+                  placeholder="Introdu titlul locației"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  Cum ți-ai dori tu ca locul respectiv să se schimbe:
                 </label>
                 <textarea
                   required
@@ -526,13 +586,13 @@ export default function MapPage({
                   onChange={(e) => setProposalData({ ...proposalData, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={3}
-                  placeholder="Enter location description"
+                  placeholder="Descrie schimbarea dorită"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Name (optional)
+                    Nume (opțional):
                   </label>
                   <input
                     type="text"
@@ -540,12 +600,12 @@ export default function MapPage({
                     value={proposalData.name}
                     onChange={(e) => setProposalData({ ...proposalData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="Your name"
+                    placeholder="Numele tău"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email (optional)
+                    Email (opțional):
                   </label>
                   <input
                     type="email"
@@ -553,22 +613,26 @@ export default function MapPage({
                     value={proposalData.email}
                     onChange={(e) => setProposalData({ ...proposalData, email: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="your.email@example.com"
+                    placeholder="email@exemplu.com"
                   />
                 </div>
               </div>
-              
+
               {submitError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                   <div className="text-sm text-red-700">{submitError}</div>
                 </div>
               )}
-              
-              <div className="text-sm text-gray-600">
-                Coordinates: {specialPinCoords?.[0].toFixed(6)}, {specialPinCoords?.[1].toFixed(6)}
+
+              <div>
+                Daca ne dai adresa email, vei fi informat dacă locația propusă de tine este una din cele alese să facă parte din proiect
               </div>
+
+              {/*<div className="text-sm text-gray-600">*/}
+              {/*  Coordinates: {specialPinCoords?.[0].toFixed(6)}, {specialPinCoords?.[1].toFixed(6)}*/}
+              {/*</div>*/}
               <div className="text-xs text-gray-500">
-                Your submission will be reviewed by moderators before appearing on the map.
+                Propunerea ta va fi analizată de moderatori înainte de a apărea pe hartă.
               </div>
               <div className="flex space-x-3">
                 <button
@@ -582,10 +646,10 @@ export default function MapPage({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Submitting...
+                      Se trimite...
                     </>
                   ) : (
-                    'Submit for Review'
+                    'Trimite'
                   )}
                 </button>
                 <button
@@ -664,10 +728,9 @@ export default function MapPage({
             
             {/* Success Message */}
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Thank You! 🎉</h3>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Îți mulțumim! 🎉</h3>
               <p className="text-gray-600">
-                Your location has been successfully submitted for review. 
-                We&apos;ll notify you once it&apos;s approved and added to the map!
+                Propunerea ta a fost trimisă și va deveni vizibilă pe hartă de îndată ce va fi aprobată de un moderator!
               </p>
             </div>
             
@@ -677,7 +740,73 @@ export default function MapPage({
                 onClick={() => setShowProposalSuccess(false)}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
-                Awesome!
+                Ok
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Site Load Popup (once per month) */}
+      {showSiteLoadPopup && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          ref={siteLoadPopupRef}
+          onClick={handleSiteLoadBackdropClick}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Bucureștiul Posibil</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Pentru a propune o locație pentru proiectul &ldquo;Bucureștiul posibil&rdquo; pune un pin pe hartă pe locația pe care ți-o dorești, și apoi apasă pe butonul &ldquo;+&rdquo; din colțul dreapta sus al ecranului. Mulțumim!
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <button
+                onClick={handleSiteLoadPopupDismiss}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Am înțeles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logo Click Popup */}
+      {showLogoPopup && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          ref={logoPopupRef}
+          onClick={handleLogoBackdropClick}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            {/* Image at the top */}
+            <div className="flex justify-center mb-4">
+              <Image 
+                src="/SpO-si-AFCN.jpg" 
+                alt="Străzi pentru Oameni și AFCN" 
+                width={400} 
+                height={200}
+                className="h-auto max-w-full rounded"
+              />
+            </div>
+            
+            {/* Project information */}
+            <div className="text-center mb-6">
+              <p className="text-gray-700 leading-relaxed">
+                &ldquo;Bucureștiul posibil&rdquo; este un proiect desfășurat de <a href="https://strazipentruoameni.net/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Asociația Străzi pentru Oameni</a> și este co-finanțat de Administrația Fondului Cultural Național – AFCN.
+                <br /><br />
+                Proiectul nu reprezintă în mod necesar poziția Administrației Fondului Cultural Național. AFCN nu este responsabilă de conținutul proiectului sau de modul în care rezultatele proiectului pot fi folosite. Acestea sunt în întregime responsabilitatea beneficiarului finanțării.
+              </p>
+            </div>
+            
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowLogoPopup(false)}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Închide
               </button>
             </div>
           </div>
