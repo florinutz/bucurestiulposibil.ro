@@ -102,7 +102,7 @@ async function handlePinUpdate(sanityData: SanityPin) {
 
   // Pin is approved - sync to D1
   console.log(`Pin ${sanityData._id} is approved, syncing to D1`)
-  
+
   // Convert Sanity data to D1 format
   const d1Data: D1Pin = {
     id: sanityData._id,
@@ -111,6 +111,9 @@ async function handlePinUpdate(sanityData: SanityPin) {
     lat: sanityData.location.lat,
     lng: sanityData.location.lng,
     description: sanityData.description || null,
+    submitted_by_name: sanityData.submittedBy?.name ?? null,
+    submitted_by_email: sanityData.submittedBy?.email ?? null,
+    submitted_by_ip: sanityData.submittedBy?.ip ?? null,
     created_at: sanityData._createdAt,
     updated_at: sanityData._updatedAt,
     approved_at: sanityData.approvedAt || null,
@@ -133,9 +136,11 @@ async function upsertToD1(data: D1Pin) {
     const stmt = db.prepare(`
       INSERT OR REPLACE INTO geopoints (
         id, title, slug, lat, lng, description,
+        submitted_by_name, submitted_by_email, submitted_by_ip,
         created_at, updated_at, approved_at, approved_by
       ) VALUES (
         ?, ?, ?, ?, ?, ?,
+        ?, ?, ?,
         ?, ?, ?, ?
       )
     `)
@@ -147,6 +152,9 @@ async function upsertToD1(data: D1Pin) {
       data.lat,
       data.lng,
       data.description || null,
+      data.submitted_by_name || null,
+      data.submitted_by_email || null,
+      data.submitted_by_ip || null,
       data.created_at,
       data.updated_at,
       data.approved_at || null,
