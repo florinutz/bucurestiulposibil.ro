@@ -74,6 +74,7 @@
     "db:shell:remote": "wrangler d1 execute dots --interactive --remote",
     "db:info": "wrangler d1 info dots",
     "db:backup": "wrangler d1 export dots --output=./backup.sql",
+    "db:backup:remote": "wrangler d1 export dots --output=./backup.sql --remote",
     "db:restore": "wrangler d1 execute dots --file=./backup.sql",
     "db:restore:remote": "wrangler d1 execute dots --file=./backup.sql --remote",
     "db:count": "wrangler d1 execute dots --command=\"SELECT COUNT(*) as count FROM geopoints\"",
