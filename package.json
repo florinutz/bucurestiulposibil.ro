@@ -80,6 +80,10 @@
     "db:count": "wrangler d1 execute dots --command=\"SELECT COUNT(*) as count FROM geopoints\"",
     "db:count:remote": "wrangler d1 execute dots --command=\"SELECT COUNT(*) as count FROM geopoints\" --remote",
     "db:list": "wrangler d1 execute dots --command=\"SELECT id, title, created_at FROM geopoints ORDER BY created_at DESC LIMIT 10\"",
-    "db:list:remote": "wrangler d1 execute dots --command=\"SELECT id, title, created_at FROM geopoints ORDER BY created_at DESC LIMIT 10\" --remote"
+    "db:list:remote": "wrangler d1 execute dots --command=\"SELECT id, title, created_at FROM geopoints ORDER BY created_at DESC LIMIT 10\" --remote",
+    "sanity:list": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs list",
+    "sanity:list:approved": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs list --status=approved",
+    "sanity:sync": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs sync",
+    "sanity:sync:remote": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs sync --remote"
   }
 }
