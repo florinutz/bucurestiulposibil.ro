@@ -34,7 +34,8 @@
 	 */
 	"vars": {
 		"NEXT_PUBLIC_SANITY_PROJECT_ID": "dxicn1kk",
-		"NEXT_PUBLIC_SANITY_DATASET": "production"
+		"NEXT_PUBLIC_SANITY_DATASET": "production",
+        "NEXT_PUBLIC_DISABLE_PROPOSALS": true
 	},
 	// build time vars:
 	"define": {
