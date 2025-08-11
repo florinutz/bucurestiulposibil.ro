@@ -34,6 +34,9 @@ export interface D1Pin {
   lat: number
   lng: number
   description?: string | null
+  submitted_by_name?: string | null
+  submitted_by_email?: string | null
+  submitted_by_ip?: string | null
   created_at: string
   updated_at: string
   approved_at?: string | null

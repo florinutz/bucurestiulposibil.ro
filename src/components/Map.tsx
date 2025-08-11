@@ -99,6 +99,7 @@ export default function Map({
               <div class="p-3" style="min-width: 250px; max-width: 300px;">
                 <h3 class="font-semibold text-lg mb-2">${location.title}</h3>
                 <p class="text-gray-600 text-sm leading-relaxed">${location.description}</p>
+                ${location.submittedByName ? `<div class="mt-3 pt-2 border-t border-gray-200"><p class="text-xs text-gray-500 font-bold">${location.submittedByName}</p></div>` : ''}
               </div>
             `);
           locationMarkersRef.current.push(marker);
@@ -229,6 +230,7 @@ export default function Map({
               <div class="p-3" style="min-width: 250px; max-width: 300px;">
                 <h3 class="font-semibold text-lg mb-2">${location.title}</h3>
                 <p class="text-gray-600 text-sm leading-relaxed">${location.description}</p>
+                ${location.submittedByName ? `<div class="mt-3 pt-2 border-t border-gray-200"><p class="text-xs text-gray-500 font-bold">Propus de: ${location.submittedByName}</p></div>` : ''}
               </div>
             `);
           
