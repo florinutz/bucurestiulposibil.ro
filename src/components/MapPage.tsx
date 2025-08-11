@@ -287,6 +287,12 @@ export default function MapPage({
       alert('Te rog să faci click pe hartă mai întâi pentru a plasa un pin, apoi apasă butonul + pentru a adăuga o locație.');
       return;
     }
+    
+    if (process.env.NEXT_PUBLIC_DISABLE_PROPOSALS === 'true') {
+      alert('Propunerile de locații sunt dezactivate.');
+      return;
+    }
+    
     setShowProposalForm(true);
   }, [specialPinCoords]);
 
