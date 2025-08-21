@@ -1,0 +1,111 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import type { VoteRequest, VoteResponse } from '@/types/geopoint';
+
+export const runtime = 'edge';
+
+function generateVoteId(): string {
+  return `vote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function getBrowserFingerprint(request: NextRequest, body: VoteRequest) {
+  return {
+    ...body.browserFingerprint,
+    hash: btoa(JSON.stringify(body.browserFingerprint)).replace(/[^a-zA-Z0-9]/g, '').substr(0, 32)
+  };
+}
+
+export async function POST(request: NextRequest) {
+  const { env } = await getCloudflareContext();
+  const db = env.DB as D1Database;
+  
+  if (!db) {
+    return NextResponse.json(
+      { error: 'Database not available' },
+      { status: 503 }
+    );
+  }
+  
+  try {
+    const body: VoteRequest = await request.json();
+    const { geopointId, browserFingerprint } = body;
+    
+    if (!geopointId || !browserFingerprint) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const fingerprint = getBrowserFingerprint(request, body);
+    const voteId = generateVoteId();
+    const now = new Date().toISOString();
+    
+    // Get client IP from Cloudflare headers
+    const clientIP = request.headers.get('CF-Connecting-IP') || 
+                    request.headers.get('X-Forwarded-For') || 
+                    'unknown';
+
+    // Check if pin is votable
+    const pinCheck = await db.prepare(
+      'SELECT id, is_votable FROM geopoints WHERE id = ? AND is_votable = TRUE'
+    ).bind(geopointId).first();
+    
+    if (!pinCheck) {
+      return NextResponse.json(
+        { error: 'Pin not found or not votable' },
+        { status: 404 }
+      );
+    }
+
+    // Try to insert vote (will fail if already voted due to UNIQUE constraint)
+    try {
+      await db.prepare(`
+        INSERT INTO votes (
+          id, geopoint_id, voted_at, browser_fingerprint,
+          ip_address, user_agent, screen_resolution, timezone, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        voteId,
+        geopointId,
+        now,
+        fingerprint.hash,
+        clientIP,
+        fingerprint.userAgent,
+        fingerprint.screenResolution,
+        fingerprint.timezone,
+        now
+      ).run();
+    } catch (error) {
+      // Check if it's a duplicate vote error
+      if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
+        return NextResponse.json(
+          { error: 'You have already voted for this location' },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
+
+    // Get updated vote count
+    const voteCountResult = await db.prepare(
+      'SELECT COUNT(*) as count FROM votes WHERE geopoint_id = ?'
+    ).bind(geopointId).first();
+    
+    const newVoteCount = Number(voteCountResult?.count) || 0;
+
+    const response: VoteResponse = {
+      success: true,
+      voteId,
+      newVoteCount
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('Error recording vote:', error);
+    return NextResponse.json(
+      { error: 'Failed to record vote' },
+      { status: 500 }
+    );
+  }
+}
