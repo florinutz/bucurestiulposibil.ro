@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Location, VotableLocation, MapMode } from '@/types/geopoint';
+import { VotingStore } from '@/lib/votingStore';
 
 interface MapCoreProps {
   center?: [number, number];
@@ -87,18 +88,53 @@ export function MapCore({
   const createPopupContent = useCallback((location: Location | VotableLocation) => {
     if (mode === 'voting') {
       const votableLocation = location as VotableLocation;
+      const votingStore = VotingStore.getInstance();
+      const hasVotedAnywhere = votingStore.hasVoted();
+      
       return `
-        <div class="p-3 cursor-pointer" style="min-width: 250px; max-width: 300px;">
-          <h3 class="font-semibold text-lg mb-2">${location.title}</h3>
-          <p class="text-gray-600 text-sm leading-relaxed mb-2">${location.description}</p>
-          <div class="bg-gray-50 p-2 rounded mb-2">
-            <p class="text-sm text-gray-600">
-              <strong>Voturi:</strong> ${votableLocation.voteCount || 0}
+        <div class="p-4" style="min-width: 280px; max-width: 320px;">
+          <h3 class="font-semibold text-lg mb-3">${location.title}</h3>
+          <p class="text-gray-600 text-sm leading-relaxed mb-3">${location.description}</p>
+          
+          ${location.submittedByName ? `
+            <div class="border-t pt-3 mb-3">
+              <p class="text-sm font-medium text-gray-800">${location.submittedByName}</p>
+            </div>
+          ` : ''}
+
+          <div class="bg-gray-50 p-3 rounded mb-3">
+            <p class="text-sm text-gray-600 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12l2 2 4-4"/>
+                <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
+                <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
+                <path d="M3 12h6m6 0h6"/>
+              </svg>
+              <strong>Voturi primite:</strong> <span id="vote-count-${location.id}">${votableLocation.voteCount || 0}</span>
             </p>
           </div>
-          ${location.submittedByName ? `<div class="mt-3 pt-2 border-t border-gray-200"><p class="text-xs text-gray-800 font-bold">${location.submittedByName}</p></div>` : ''}
-          <div class="mt-3 text-center">
-            <p class="text-xs text-blue-600">Click pentru a vota</p>
+
+          <div class="space-y-2">
+            <div id="vote-error-${location.id}" class="hidden bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm"></div>
+            
+            ${!hasVotedAnywhere ? `
+              <div class="flex gap-2">
+                <button
+                  id="vote-btn-${location.id}"
+                  data-location-id="${location.id}"
+                  data-location-title="${location.title.replace(/"/g, '&quot;')}"
+                  class="vote-button unvoted flex-1 px-4 py-2 rounded text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700 active:bg-green-800"
+                >
+                  🗳️ Votează
+                </button>
+              </div>
+            ` : ''}
+          </div>
+
+          <div id="vote-success-${location.id}" class="hidden mt-3 text-center">
+            <div class="text-3xl mb-2">🎉</div>
+            <p class="text-sm font-medium text-green-700">Mulțumim pentru vot!</p>
+            <p class="text-xs text-gray-600 mt-1">Votul tău a fost înregistrat cu succes.</p>
           </div>
         </div>
       `;
@@ -113,6 +149,87 @@ export function MapCore({
       </div>
     `;
   }, [mode]);
+
+  // Handle vote button clicks within popups
+  const handleVoteButtonClick = useCallback(async (event: Event) => {
+    const target = event.target as HTMLElement;
+    if (!target.classList.contains('vote-button') || target.hasAttribute('disabled')) {
+      return;
+    }
+
+    const locationId = target.getAttribute('data-location-id');
+    const locationTitle = target.getAttribute('data-location-title');
+    
+    if (!locationId || !locationTitle) return;
+
+          // Show loading state
+      target.innerHTML = '⏳ Se înregistrează...';
+      target.classList.add('opacity-50', 'cursor-wait');
+
+    // Hide any existing error
+    const errorElement = document.getElementById(`vote-error-${locationId}`);
+    if (errorElement) {
+      errorElement.classList.add('hidden');
+    }
+
+    try {
+      const votingStore = VotingStore.getInstance();
+      const result = await votingStore.castVote(locationId, locationTitle);
+
+      // Update vote count in popup
+      const voteCountElement = document.getElementById(`vote-count-${locationId}`);
+      if (voteCountElement) {
+        voteCountElement.textContent = result.newVoteCount.toString();
+      }
+
+      // Hide the voted button since user can only vote once
+      const buttonContainer = target.closest('.flex.gap-2') as HTMLElement;
+      if (buttonContainer) {
+        buttonContainer.style.display = 'none';
+      }
+
+      // Show success message
+      const successElement = document.getElementById(`vote-success-${locationId}`);
+      if (successElement) {
+        successElement.classList.remove('hidden');
+        
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          if (successElement) {
+            successElement.classList.add('hidden');
+          }
+        }, 3000);
+      }
+
+      // Hide all vote buttons since user can only vote once
+      const allVoteButtons = document.querySelectorAll('.vote-button');
+      allVoteButtons.forEach(button => {
+        if (button !== target) {
+          // Hide the button container (parent div)
+          const buttonContainer = button.closest('.flex.gap-2') as HTMLElement;
+          if (buttonContainer) {
+            buttonContainer.style.display = 'none';
+          }
+        }
+      });
+
+      // Trigger custom event to update the voted location indicator
+      window.dispatchEvent(new CustomEvent('voteSuccess', { 
+        detail: { locationId, locationTitle }
+      }));
+
+    } catch (error) {
+      // Show error message
+      if (errorElement) {
+        errorElement.textContent = error instanceof Error ? error.message : 'Eroare la înregistrarea votului';
+        errorElement.classList.remove('hidden');
+      }
+
+      // Reset button state
+      target.innerHTML = '🗳️ Votează';
+      target.classList.remove('opacity-50', 'cursor-wait');
+    }
+  }, []);
 
   // Initialize map only once
   useEffect(() => {
@@ -196,6 +313,12 @@ export function MapCore({
           });
         }
 
+        // Add event delegation for voting buttons in popup
+        if (mode === 'voting') {
+          // Add click event listener to the map container for vote buttons
+          map.getContainer().addEventListener('click', handleVoteButtonClick);
+        }
+
         setIsMapReady(true);
 
       } catch (error) {
@@ -207,11 +330,15 @@ export function MapCore({
 
     return () => {
       if (mapInstanceRef.current) {
+        // Clean up event listeners
+        if (mode === 'voting') {
+          mapInstanceRef.current.getContainer().removeEventListener('click', handleVoteButtonClick);
+        }
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, [isClient, center, zoom, mode]); // Include mode in dependencies
+  }, [isClient, center, zoom, mode, handleVoteButtonClick]); // Include all dependencies
 
   // Update map view when center/zoom changes
   useEffect(() => {
@@ -284,21 +411,24 @@ export function MapCore({
         // Add new markers
         for (const location of locations) {
           try {
-            const iconFn = await getPinIcon(location);
+            // Enhance location with voting state for voting mode
+            let enhancedLocation = location;
+            if (mode === 'voting') {
+              const votingStore = VotingStore.getInstance();
+              enhancedLocation = {
+                ...location,
+                userHasVoted: votingStore.hasVoted(location.id)
+              } as VotableLocation;
+            }
+
+            const iconFn = await getPinIcon(enhancedLocation);
             const icon = await iconFn();
           
             const marker = L.marker([location.lat, location.lng], { icon })
               .addTo(map)
-              .bindPopup(createPopupContent(location));
+              .bindPopup(createPopupContent(enhancedLocation));
 
-            // Handle click events for voting mode
-            if (mode === 'voting' && onPinClickRef.current) {
-              marker.on('click', () => {
-                if (onPinClickRef.current) {
-                  onPinClickRef.current(location);
-                }
-              });
-            }
+            // In voting mode, popup handles everything - no additional click handlers needed
             
             locationMarkersRef.current.push(marker);
             addedLocationIdsRef.current.add(location.id);

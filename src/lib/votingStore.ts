@@ -1,7 +1,7 @@
 import type { VotableLocation, BrowserFingerprint, VoteRequest, VoteResponse, UserVotesResponse } from '@/types/geopoint';
 import { generateBrowserFingerprint, getFingerprintHash } from './browserFingerprint';
 
-const VOTED_PINS_KEY = 'votedPins';
+const VOTED_LOCATION_KEY = 'votedLocation'; // Changed from multiple pins to single location
 const FINGERPRINT_KEY = 'browserFingerprint';
 
 /**
@@ -70,10 +70,15 @@ export class VotingStore {
   }
 
   /**
-   * Cast a vote for a specific pin
+   * Cast a vote for a specific pin (only one vote allowed total)
    */
-  async castVote(geopointId: string): Promise<{ success: boolean; newVoteCount: number }> {
+  async castVote(geopointId: string, locationTitle: string): Promise<{ success: boolean; newVoteCount: number }> {
     try {
+      // Check if user has already voted
+      if (this.hasVoted()) {
+        throw new Error('Ai votat deja. Poți vota doar pentru o singură locație.');
+      }
+
       const browserFingerprint = this.getBrowserFingerprint();
       
       const requestData: VoteRequest = {
@@ -96,8 +101,8 @@ export class VotingStore {
       
       const result: VoteResponse = await response.json();
       
-      // Store vote locally for UI feedback
-      this.markAsVoted(geopointId);
+      // Store vote locally for UI feedback (single location)
+      this.markAsVoted(geopointId, locationTitle);
       
       return {
         success: result.success,
@@ -113,43 +118,47 @@ export class VotingStore {
   }
 
   /**
-   * Get list of pin IDs that the user has voted for (from localStorage)
+   * Get the location the user voted for (single vote system)
    */
-  getVotedPins(): string[] {
-    if (typeof window === 'undefined') return [];
+  getVotedLocation(): { id: string; title: string } | null {
+    if (typeof window === 'undefined') return null;
     
     try {
-      const stored = localStorage.getItem(VOTED_PINS_KEY);
-      return stored ? JSON.parse(stored) : [];
+      const stored = localStorage.getItem(VOTED_LOCATION_KEY);
+      return stored ? JSON.parse(stored) : null;
     } catch {
-      return [];
+      return null;
     }
   }
 
   /**
-   * Mark a pin as voted in localStorage
+   * Mark a pin as voted in localStorage (single vote system)
    */
-  markAsVoted(geopointId: string): void {
+  markAsVoted(geopointId: string, locationTitle: string): void {
     if (typeof window === 'undefined') return;
     
-    const votedPins = this.getVotedPins();
-    if (!votedPins.includes(geopointId)) {
-      votedPins.push(geopointId);
-      localStorage.setItem(VOTED_PINS_KEY, JSON.stringify(votedPins));
+    const votedLocation = {
+      id: geopointId,
+      title: locationTitle
+    };
+    localStorage.setItem(VOTED_LOCATION_KEY, JSON.stringify(votedLocation));
+  }
+
+  /**
+   * Check if user has voted (any vote at all)
+   */
+  hasVoted(geopointId?: string): boolean {
+    const votedLocation = this.getVotedLocation();
+    if (geopointId) {
+      return votedLocation?.id === geopointId;
     }
+    return votedLocation !== null;
   }
 
   /**
-   * Check if user has voted for a specific pin (from localStorage)
+   * Fetch user's vote from the server (to sync with localStorage)
    */
-  hasVoted(geopointId: string): boolean {
-    return this.getVotedPins().includes(geopointId);
-  }
-
-  /**
-   * Fetch user's votes from the server (to sync with localStorage)
-   */
-  async syncUserVotes(): Promise<string[]> {
+  async syncUserVote(): Promise<{ id: string; title: string } | null> {
     try {
       const browserFingerprint = this.getBrowserFingerprint();
       
@@ -162,25 +171,30 @@ export class VotingStore {
       });
       
       if (!response.ok) {
-        console.warn('Failed to sync user votes from server');
-        return this.getVotedPins();
+        console.warn('Failed to sync user vote from server');
+        return this.getVotedLocation();
       }
       
       const data: UserVotesResponse = await response.json();
       const serverVotedPins = data.votedPinIds || [];
       
-      // Merge with local storage and update
-      const localVotedPins = this.getVotedPins();
-      const mergedVotes = Array.from(new Set([...localVotedPins, ...serverVotedPins]));
-      
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(VOTED_PINS_KEY, JSON.stringify(mergedVotes));
+      // In single vote system, there should be at most one vote
+      if (serverVotedPins.length > 0) {
+        // We'll need to fetch the location title from the server or store it differently
+        // For now, sync the ID and use a placeholder title
+        const votedLocation = { id: serverVotedPins[0], title: 'Unknown Location' };
+        
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(VOTED_LOCATION_KEY, JSON.stringify(votedLocation));
+        }
+        
+        return votedLocation;
       }
       
-      return mergedVotes;
+      return null;
     } catch (error) {
-      console.warn('Failed to sync votes with server:', error);
-      return this.getVotedPins();
+      console.warn('Failed to sync vote with server:', error);
+      return this.getVotedLocation();
     }
   }
 
@@ -190,7 +204,7 @@ export class VotingStore {
   clearLocalVotes(): void {
     if (typeof window === 'undefined') return;
     
-    localStorage.removeItem(VOTED_PINS_KEY);
+    localStorage.removeItem(VOTED_LOCATION_KEY);
     localStorage.removeItem(FINGERPRINT_KEY);
     this.cachedFingerprint = null;
   }
@@ -198,11 +212,11 @@ export class VotingStore {
   /**
    * Get voting statistics for debugging
    */
-  getDebugInfo(): { fingerprintHash: string; votedPins: string[]; fingerprint: BrowserFingerprint } {
+  getDebugInfo(): { fingerprintHash: string; votedLocation: { id: string; title: string } | null; fingerprint: BrowserFingerprint } {
     const fingerprint = this.getBrowserFingerprint();
     return {
       fingerprintHash: getFingerprintHash(fingerprint),
-      votedPins: this.getVotedPins(),
+      votedLocation: this.getVotedLocation(),
       fingerprint
     };
   }

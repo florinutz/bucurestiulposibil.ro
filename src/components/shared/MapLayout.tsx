@@ -6,6 +6,7 @@ import { MapControls, MapControlsRef } from './MapControls';
 import { Modal } from './ModalSystem';
 import Image from 'next/image';
 import type { Location, VotableLocation, MapMode } from '@/types/geopoint';
+import { VotingStore } from '@/lib/votingStore';
 
 interface MapLayoutProps {
   mode: MapMode;
@@ -45,13 +46,16 @@ export function MapLayout({
   // Logo popup state
   const [showLogoPopup, setShowLogoPopup] = useState(false);
   const mapControlsRef = useRef<MapControlsRef>(null);
+  
+  // Voting indicator state
+  const [votedLocation, setVotedLocation] = useState<{ id: string; title: string } | null>(null);
 
   // Handle logo click
   const handleLogoClick = useCallback(() => {
     setShowLogoPopup(true);
   }, []);
 
-  // Handle map click in voting mode (act like ESC)
+    // Handle map click in voting mode (act like ESC)
   const handleMapClick = useCallback(() => {
     if (mode === 'voting') {
       // Close any open modals when map is clicked in voting mode
@@ -68,7 +72,36 @@ export function MapLayout({
     }
   }, [mode, showLogoPopup, showWelcomePopup, onWelcomePopupDismiss]);
 
+  // Check for voted location in voting mode
+  useEffect(() => {
+    if (mode === 'voting') {
+      const votingStore = VotingStore.getInstance();
+      const voted = votingStore.getVotedLocation();
+      setVotedLocation(voted);
+      
+      // Set up a listener for localStorage changes (from other tabs/windows)
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'votedLocation') {
+          const newVoted = e.newValue ? JSON.parse(e.newValue) : null;
+          setVotedLocation(newVoted);
+        }
+      };
 
+      // Set up a listener for immediate vote success events
+      const handleVoteSuccess = (e: CustomEvent) => {
+        const { locationId, locationTitle } = e.detail;
+        setVotedLocation({ id: locationId, title: locationTitle });
+      };
+      
+      window.addEventListener('storage', handleStorageChange);
+      window.addEventListener('voteSuccess', handleVoteSuccess as EventListener);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('voteSuccess', handleVoteSuccess as EventListener);
+      };
+    }
+  }, [mode]);
 
   // ESC key handling
   useEffect(() => {
@@ -142,6 +175,20 @@ export function MapLayout({
         onZoomChange={onZoomChange}
         mode={mode}
       />
+
+      {/* Voted Location Indicator - top right */}
+      {mode === 'voting' && votedLocation && (
+        <div className="pointer-events-none fixed top-4 right-4 z-20">
+          <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 max-w-xs">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-green-600 font-medium">✓ Votul tău:</span>
+            </div>
+            <div className="font-medium text-gray-800 text-sm mt-1">
+              {votedLocation.title}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Page-specific content (e.g., add button, voting UI, etc.) */}
       {children}
