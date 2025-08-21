@@ -1,14 +1,4 @@
-export interface Location {
-  id: string;
-  title: string;
-  description: string;
-  lat: number;
-  lng: number;
-  status: 'approved' | 'pending' | 'rejected';
-  createdAt: Date;
-  createdBy?: string;
-  submittedByName?: string;
-}
+import type { Location, D1Pin } from '@/types/geopoint';
 
 export interface LocationProposal {
   id: string;
@@ -19,21 +9,6 @@ export interface LocationProposal {
   status: 'pending' | 'rejected';
   createdAt: Date;
   createdBy?: string;
-}
-
-interface D1Pin {
-  id: string;
-  title: string;
-  description: string;
-  lat: number;
-  lng: number;
-  submitted_by_name?: string | null;
-  submitted_by_email?: string | null;
-  submitted_by_ip?: string | null;
-  created_at: string;
-  updated_at: string;
-  approved_at?: string | null;
-  approved_by?: string | null;
 }
 
 // In-memory storage for demo purposes

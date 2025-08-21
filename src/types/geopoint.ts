@@ -41,6 +41,7 @@ export interface D1Pin {
   updated_at: string
   approved_at?: string | null
   approved_by?: string | null
+  is_votable: number // SQLite boolean as number (0 or 1)
 }
 
 // Form data for point proposals
@@ -75,4 +76,74 @@ export interface SanityWebhookData {
   _id: string
   eventType: SanityWebhookEvent
   data: SanityPin | null // null for delete events
+}
+
+// Browser fingerprint for voting fraud prevention
+export interface BrowserFingerprint {
+  userAgent: string
+  screenResolution: string
+  timezone: string
+  language: string
+  platform: string
+}
+
+// Vote record in D1 database
+export interface Vote {
+  id: string
+  geopoint_id: string
+  voted_at: string
+  browser_fingerprint: string
+  ip_address?: string | null
+  user_agent?: string | null
+  screen_resolution?: string | null
+  timezone?: string | null
+  session_id?: string | null
+  created_at: string
+}
+
+// Extended location interface for voting
+export interface VotableLocation {
+  id: string
+  title: string
+  description: string
+  lat: number
+  lng: number
+  status: 'approved'
+  createdAt: Date
+  submittedByName?: string
+  isVotable: boolean
+  voteCount: number
+  userHasVoted?: boolean
+}
+
+// Frontend interface for regular locations (extends for backward compatibility)
+export interface Location {
+  id: string
+  title: string
+  description: string
+  lat: number
+  lng: number
+  status: 'approved'
+  createdAt: Date
+  submittedByName?: string
+}
+
+// API request/response interfaces for voting
+export interface VoteRequest {
+  geopointId: string
+  browserFingerprint: BrowserFingerprint
+}
+
+export interface VoteResponse {
+  success: boolean
+  voteId: string
+  newVoteCount: number
+}
+
+export interface UserVotesResponse {
+  votedPinIds: string[]
+}
+
+export interface VotingGeopointsResponse {
+  locations: VotableLocation[]
 } 

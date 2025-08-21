@@ -117,6 +117,7 @@ async function handlePinUpdate(sanityData: SanityPin) {
     created_at: sanityData._createdAt,
     updated_at: sanityData._updatedAt,
     approved_at: sanityData.approvedAt || null,
+    is_votable: 0, // Default to not votable for new proposals
     approved_by: sanityData.approvedBy || null,
   }
 
@@ -137,11 +138,11 @@ async function upsertToD1(data: D1Pin) {
       INSERT OR REPLACE INTO geopoints (
         id, title, slug, lat, lng, description,
         submitted_by_name, submitted_by_email, submitted_by_ip,
-        created_at, updated_at, approved_at, approved_by
+        created_at, updated_at, approved_at, approved_by, is_votable
       ) VALUES (
         ?, ?, ?, ?, ?, ?,
         ?, ?, ?,
-        ?, ?, ?, ?
+        ?, ?, ?, ?, ?
       )
     `)
 
@@ -158,7 +159,8 @@ async function upsertToD1(data: D1Pin) {
       data.created_at,
       data.updated_at,
       data.approved_at || null,
-      data.approved_by || null
+      data.approved_by || null,
+      data.is_votable
     ).run()
 
     console.log(`Successfully synced pin ${data.id} to D1`)
