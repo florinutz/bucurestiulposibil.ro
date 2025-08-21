@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { VoteRequest, VoteResponse } from '@/types/geopoint';
 
-export const runtime = 'edge';
+// Note: Edge runtime removed due to OpenNext bundling limitation
+// Edge runtime functions must be defined in separate functions for OpenNext
+// This will still run on Cloudflare Workers but with Node.js compatibility
 
 function generateVoteId(): string {
   return `vote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

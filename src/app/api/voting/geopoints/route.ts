@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-export const runtime = 'edge';
+// Note: Edge runtime removed due to OpenNext bundling limitation
+// Edge runtime functions must be defined in separate functions for OpenNext
+// This will still run on Cloudflare Workers but with Node.js compatibility
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {

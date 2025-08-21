@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { BrowserFingerprint, UserVotesResponse } from '@/types/geopoint';
 
-export const runtime = 'edge';
+// Note: Edge runtime removed due to OpenNext bundling limitation
+// Edge runtime functions must be defined in separate functions for OpenNext
+// This will still run on Cloudflare Workers but with Node.js compatibility
 
 export async function POST(request: NextRequest) {
   const { env } = await getCloudflareContext();

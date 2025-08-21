@@ -1,3 +1,6 @@
+// Map mode type
+export type MapMode = 'proposal' | 'voting';
+
 // Sanity pin data structure
 export interface SanityPin {
   _id: string

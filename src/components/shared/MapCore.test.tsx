@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import Map from './Map'
+import { MapCore } from './MapCore'
 
 // Mock Leaflet
 vi.mock('leaflet', () => ({
@@ -80,34 +80,34 @@ vi.mock('@/lib/locationStore', () => ({
   },
 }))
 
-describe('Map Component', () => {
+describe('MapCore Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('should render the map container', () => {
-    render(<Map />)
+    render(<MapCore mode="proposal" />)
 
     const mapContainer = screen.getByTestId('map-container')
     expect(mapContainer).toBeInTheDocument()
   })
 
   it('should have the correct default CSS classes', () => {
-    render(<Map />)
+    render(<MapCore mode="proposal" />)
 
     const mapContainer = screen.getByTestId('map-container')
     expect(mapContainer).toHaveClass('w-full', 'h-full')
   })
 
   it('should apply custom CSS classes', () => {
-    render(<Map className="custom-class" />)
+    render(<MapCore mode="proposal" className="custom-class" />)
 
     const mapContainer = screen.getByTestId('map-container')
     expect(mapContainer).toHaveClass('custom-class')
   })
 
   it('should initialize map with default center and zoom', async () => {
-    render(<Map />)
+    render(<MapCore mode="proposal" />)
 
     // Wait for the map to be initialized
     await waitFor(() => {
@@ -119,7 +119,7 @@ describe('Map Component', () => {
     const customCenter: [number, number] = [40.7128, -74.0060]
     const customZoom = 15
 
-    render(<Map center={customCenter} zoom={customZoom} />)
+    render(<MapCore mode="proposal" center={customCenter} zoom={customZoom} />)
 
     await waitFor(() => {
       expect(screen.getByTestId('map-container')).toBeInTheDocument()
@@ -128,7 +128,7 @@ describe('Map Component', () => {
 
   it('should handle onSpecialPinPlaced callback', async () => {
     const mockOnSpecialPinPlaced = vi.fn()
-    render(<Map onSpecialPinPlaced={mockOnSpecialPinPlaced} />)
+    render(<MapCore mode="proposal" onSpecialPinPlaced={mockOnSpecialPinPlaced} />)
 
     await waitFor(() => {
       expect(screen.getByTestId('map-container')).toBeInTheDocument()
@@ -138,7 +138,7 @@ describe('Map Component', () => {
   it('should handle special pin coordinates', async () => {
     const specialCoords: [number, number] = [45.123, 2.456]
 
-    render(<Map specialPinCoords={specialCoords} />)
+    render(<MapCore mode="proposal" specialPinCoords={specialCoords} />)
 
     await waitFor(() => {
       expect(screen.getByTestId('map-container')).toBeInTheDocument()
@@ -150,7 +150,8 @@ describe('Map Component', () => {
     const specialCoords: [number, number] = [45.123, 2.456]
 
     render(
-      <Map 
+      <MapCore 
+        mode="proposal"
         center={[40.7128, -74.0060]} 
         zoom={15}
         className="custom-map"
@@ -165,7 +166,7 @@ describe('Map Component', () => {
   })
 
   it('should cleanup on unmount', async () => {
-    const { unmount } = render(<Map />)
+    const { unmount } = render(<MapCore mode="proposal" />)
 
     await waitFor(() => {
       expect(screen.getByTestId('map-container')).toBeInTheDocument()
