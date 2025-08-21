@@ -1,0 +1,294 @@
+---
+description: Comprehensive project map covering UI, data flow, and development guidelines for maintaining code quality and system integrity.
+globs:
+  - "src/**/*"
+  - "schema.sql"
+  - "wrangler.jsonc"
+  - "package.json"
+  - "*.config.*"
+alwaysApply: false
+---
+
+# "Bucureștiul Posibil" - Complete Project Map
+
+## Project Overview
+"Bucureștiul Posibil" is an interactive citizen-engagement web application deployed at **bucurestiulposibil.ro** where citizens propose urban improvements for Bucharest. The platform uses a moderated workflow where proposals are submitted via an interactive map, reviewed in Sanity CMS, and approved locations are automatically synced to a Cloudflare D1 database for public display.
+
+**Tech Stack**: Next.js 15 + React 19 + TypeScript + TailwindCSS + Leaflet + Sanity CMS + Cloudflare D1 + Cloudflare Workers
+
+---
+
+## Complete User Interface (User Experience)
+
+### Initial Load & Welcome Flow
+1. **App Loading**: Gradient loading screen while map initializes (SSR disabled for Leaflet)
+2. **Welcome Popup**: Monthly popup (localStorage tracked) explaining pin placement process
+   - Title: "Bucureștiul Posibil"
+   - Instructions in Romanian on how to propose locations
+   - "Am înțeles" dismiss button, sets 30-day timer
+
+### Main Map Interface
+- **Full-screen Leaflet map** bounded to Bucharest (44.330819,25.933960 to 44.552407,26.258057)
+- **OpenStreetMap tiles** with green tint styling
+- **Zoom range**: 11-17, sticky bounds prevent panning outside city
+- **Pin types**: Custom icons (/pin.png, 32x32) for approved, orange SVG (48x48) for proposals
+
+### UI Controls (Positioned Layout)
+
+#### Top-Left: Project Logo
+- Clickable "Bucureștiul Posibil" logo (150x45px) with white backdrop
+- Opens project info modal with organization details and AFCN funding info
+
+#### Top-Right: Add Location Button  
+- "+" icon, gray when inactive, green with wobble animation when pin placed
+- Only functional after placing pin on map
+
+#### Bottom-Right Control Stack
+1. **Search Control**: Collapsible magnifying glass → full input with Nominatim integration
+   - 700ms debounced search, dropdown above input
+   - Smart zoom calculation based on result type and bounds
+2. **Help Control**: Question mark → expandable instructions panel in Romanian
+3. **GPS Location**: Location icon → centers map on user position (30s timeout, comprehensive error handling)
+
+#### Bottom-Right: Zoom Controls
+- Standard Leaflet zoom in/out buttons
+
+### Pin Placement Workflow
+1. **Click map** → Orange special pin appears with helper popup
+2. **Click + button** → Opens proposal form modal
+3. **Fill form** → Title (req), description (req), name/email (opt)
+4. **Submit** → POST to `/api/propose-point`
+5. **Success** → Fireworks animation modal, form cleared, pin removed
+
+### Location Popups (Existing Pins)
+- Click approved pin → popup with title, description
+- **Submitter name**: If present, shown at bottom in bold with top border separator
+- Format: Just the name (no "Propus de:" prefix as user removed it)
+
+### Modal System
+- **Proposal Form**: Full form with validation, loading states, error display
+- **Success Modal**: Celebratory with fireworks effect and thank you message
+- **Logo Modal**: Project information and funding acknowledgment
+- **Welcome Modal**: Monthly instructional popup
+- **Keyboard**: ESC closes any modal, proper focus management
+
+---
+
+## Data Flow & System Architecture
+
+### Complete Workflow Chain
+```
+👤 User clicks map → 🎯 Pin placed → ➕ Form opened → 📝 Data entered →
+📨 POST /api/propose-point → 🔍 Validation → 🏛️ Sanity (pending) →
+👥 Moderator reviews → ✅ Status: approved → 🔔 Webhook triggered →
+🔐 Signature verified → 💾 D1 upsert → 🗺️ Map displays → 👆 Popup shows submitter
+```
+
+### API Data Flow
+1. **Proposal**: Frontend → `/api/propose-point` → Sanity (status: pending)
+2. **Moderation**: Sanity Studio → Human review → Status change
+3. **Sync**: Sanity webhook → `/api/sanity-webhook` → D1 upsert/delete
+4. **Display**: Map load → `/api/geopoints` → D1 query → Pin rendering
+
+---
+
+## Data Models & Schema
+
+### Sanity Document (pin type)
+```typescript
+{
+  _id: string, _type: 'pin', _createdAt: string, _updatedAt: string,
+  title: string, slug: {current: string}, 
+  location: {lat: number, lng: number}, description?: string,
+  status: 'pending'|'approved'|'rejected'|'draft',
+  submittedBy?: {name?: string, email?: string, ip?: string},
+  moderationNotes?: string, approvedAt?: string, approvedBy?: string
+}
+```
+
+### D1 Table (geopoints)
+```sql
+CREATE TABLE geopoints (
+  id TEXT PRIMARY KEY, title TEXT NOT NULL, slug TEXT UNIQUE,
+  lat REAL NOT NULL, lng REAL NOT NULL, description TEXT,
+  submitted_by_name TEXT, submitted_by_email TEXT, submitted_by_ip TEXT,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+  approved_at TEXT, approved_by TEXT
+);
+CREATE INDEX idx_geopoints_location ON geopoints(lat, lng);
+CREATE INDEX idx_geopoints_slug ON geopoints(slug);
+```
+
+### Frontend Interface (Location)
+```typescript
+interface Location {
+  id: string, title: string, description: string,
+  lat: number, lng: number, status: 'approved',
+  createdAt: Date, submittedByName?: string  // For popup display
+}
+```
+
+---
+
+## File Structure & Code Organization
+
+### Core Components (src/components/)
+- **`MapPage.tsx`** (823 lines): Main UI orchestration, all modals, search, GPS, proposal flow
+- **`Map.tsx`** (272 lines): Leaflet integration, pin rendering, popup HTML with submitter names
+
+### API Endpoints (src/app/api/)
+- **`propose-point/route.ts`** (170 lines): Accepts proposals, validates, creates Sanity docs
+- **`sanity-webhook/route.ts`** (257 lines): Webhook handler, signature verification, D1 sync
+- **`geopoints/route.ts`** (80 lines): Fetches approved pins from D1, supports bounds filtering
+
+### Data Layer (src/lib/, src/types/)
+- **`locationStore.ts`** (147 lines): Frontend cache, D1 interface, Location mapping
+- **`geopoint.ts`** (78 lines): TypeScript interfaces for all data structures
+- **`webhookUtils.ts`**: HMAC signature verification utilities
+
+### Configuration
+- **`schema.sql`** (22 lines): D1 database schema with submitter fields
+- **`wrangler.jsonc`** (93 lines): Cloudflare config, domain routing, D1/secrets bindings
+- **`src/sanity/schemaTypes/geopoint.ts`** (144 lines): Sanity schema with workflow fields
+
+---
+
+## Development Workflow & Quality Standards
+
+### Pre-Development Requirements
+1. **Understand data flow**: Proposals → Sanity → Webhook → D1 → Display
+2. **Run baseline tests**: `npm run test:run` (must show 34/34 passing)
+3. **Check interfaces**: Review `src/types/geopoint.ts` for contracts
+4. **Verify D1 schema**: `npm run db:migrate` for latest schema
+
+### Code Quality Enforcement
+
+#### TypeScript Standards
+- **No `any` types**: ESLint rule `@typescript-eslint/no-explicit-any` enforced
+- **Interface updates**: Both `D1Pin` interfaces must match:
+  - `src/types/geopoint.ts` (main)
+  - `src/lib/locationStore.ts` (local)
+- **Type generation**: `npm run cf-typegen` after Cloudflare binding changes
+
+#### Testing Requirements
+- **Current test suite**: 34 tests across 3 files must remain green
+  - `propose-point/route.test.ts` (11 tests)
+  - `sanity-webhook/route.test.ts` (14 tests)  
+  - `Map.test.tsx` (9 tests)
+- **New features**: Add corresponding tests for API changes
+- **Mocking**: Uses MSW for HTTP, vi.mock for dependencies
+
+#### Database Change Protocol
+1. **Schema updates**: Modify `schema.sql`
+2. **Migration strategy**: 
+   - New installs: `npm run db:migrate`
+   - Existing DBs: Create explicit `ALTER TABLE` statements
+3. **Interface sync**: Update both D1Pin interfaces simultaneously
+4. **Webhook mapping**: Update field extraction in webhook handler
+
+### Build Validation Pipeline
+```bash
+npm run test:run        # All tests pass (required)
+npm run lint           # No ESLint errors (required)  
+npm run check          # TypeScript + build validation (required)
+npm run build:cloudflare  # Cloudflare Workers build (required)
+```
+
+### Database Management
+```bash
+# Local development
+npm run db:migrate     # Apply schema.sql
+npm run db:reset       # Drop and recreate
+npm run db:count       # Check records
+
+# Production operations  
+npm run db:migrate:remote  # Apply to production
+npm run db:count:remote    # Production record count
+```
+
+---
+
+## Development Patterns & Standards
+
+### Adding New Modals
+1. Add state to `MapPage.tsx`
+2. Create backdrop click handler  
+3. Add ESC key handling to existing useEffect
+4. Follow accessibility patterns (focus management)
+
+### API Endpoint Creation
+1. Create route file: `src/app/api/[name]/route.ts`
+2. Add interfaces to `src/types/geopoint.ts`
+3. Create test file: `[name].test.ts`
+4. Mock dependencies, test error cases
+
+### Data Flow Modifications
+1. Update Sanity schema: `src/sanity/schemaTypes/geopoint.ts`
+2. Update D1 schema: `schema.sql`  
+3. Update TypeScript: `src/types/geopoint.ts`
+4. Update webhook: field mapping in `sanity-webhook/route.ts`
+5. Update frontend: locationStore mapping
+6. Add/update tests for new fields
+
+### Error Handling Standards
+- **API responses**: 400 (validation), 401 (auth), 409 (conflict), 500 (internal), 503 (unavailable)
+- **Frontend errors**: Inline form errors, Romanian user messages, GPS-specific guidance
+- **Fallbacks**: Loading states, error boundaries
+
+---
+
+## Security & Performance
+
+### Security Measures
+- **IP tracking**: Auto-logged for spam prevention
+- **Webhook security**: HMAC signature verification required
+- **Input validation**: Server-side validation all user inputs  
+- **Content moderation**: All proposals require human approval
+
+### Performance Optimizations
+- **Map rendering**: SSR disabled, efficient marker management
+- **Search**: 700ms debouncing, smart zoom calculation
+- **Caching**: Client-side locationStore cache
+- **Database**: Spatial indexing on (lat,lng), unique slug index
+
+---
+
+## Troubleshooting Guide
+
+### Map Issues
+- **Not loading**: Check SSR disabled, Leaflet CSS loaded, bounds correct
+- **Pins missing**: Verify D1 sync, check webhook logs, confirm approved status
+
+### Webhook Problems  
+- **Not firing**: Verify URL in Sanity, check secret configuration
+- **Sync failures**: Check signature verification, review D1 binding, examine logs
+
+### Build Failures
+- **Type errors**: Run `npm run cf-typegen`, check interface exports
+- **Test failures**: Review mocks, check API contracts
+- **ESLint errors**: Fix any violations, ensure no `any` types
+
+---
+
+## Critical Rules for Code Changes
+
+### ALWAYS Before Committing
+1. ✅ **Tests pass**: `npm run test:run` shows 34/34 green
+2. ✅ **Lint clean**: `npm run lint` reports no errors  
+3. ✅ **Build succeeds**: `npm run check` completes successfully
+4. ✅ **Types current**: `npm run cf-typegen` if Cloudflare changes made
+
+### NEVER Do This
+- ❌ Use `any` types (ESLint will catch this)
+- ❌ Commit failing tests
+- ❌ Modify D1 schema without updating both interfaces
+- ❌ Skip webhook signature verification
+- ❌ Allow direct-to-map posting (bypass moderation)
+
+### Data Integrity Rules
+- 🔒 **Only approved pins in D1**: Webhook enforces this rule
+- 🔒 **Webhook is source of truth**: For Sanity → D1 sync
+- 🔒 **All proposals start pending**: No exceptions
+- 🔒 **IP always logged**: For spam prevention
+
+This rule serves as the definitive reference for the complete "Bucureștiul Posibil" system. Consult before making changes to ensure consistency and system integrity.

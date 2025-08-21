@@ -84,6 +84,12 @@
     "sanity:list": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs list",
     "sanity:list:approved": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs list --status=approved",
     "sanity:sync": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs sync",
-    "sanity:sync:remote": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs sync --remote"
+    "sanity:sync:remote": "export $(cat .env.local | xargs) && node scripts/sync-sanity-to-d1.mjs sync --remote",
+    "db:migrate:voting": "wrangler d1 execute dots --file=./migrations/001_add_voting_support.sql",
+    "db:migrate:voting:remote": "wrangler d1 execute dots --file=./migrations/001_add_voting_support.sql --remote",
+    "db:voting:mark-pins": "wrangler d1 execute dots --file=./scripts/mark-voting-pins.sql",
+    "db:voting:mark-pins:remote": "wrangler d1 execute dots --file=./scripts/mark-voting-pins.sql --remote",
+    "db:voting:stats": "wrangler d1 execute dots --command=\"SELECT COUNT(*) as total_votes, COUNT(DISTINCT geopoint_id) as voted_pins FROM votes\"",
+    "db:voting:stats:remote": "wrangler d1 execute dots --command=\"SELECT COUNT(*) as total_votes, COUNT(DISTINCT geopoint_id) as voted_pins FROM votes\" --remote"
   }
 }
