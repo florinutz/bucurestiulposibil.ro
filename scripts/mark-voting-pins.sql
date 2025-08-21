@@ -1,5 +1,9 @@
 -- Mark 21 specific pins as votable for the voting phase
 -- Replace these IDs with your actual chosen pin IDs from the database
+-- First, set is_votable to FALSE for all pins
+UPDATE geopoints SET is_votable = FALSE;
+
+-- Then, mark the selected pins as votable
 UPDATE geopoints SET is_votable = TRUE WHERE id IN (
   'U2gTStYh0IVwUEOJbCsIcP', -- Acces zona lac
   'U2gTStYh0IVwUEOJbCoE4a', -- Strand Cara  
