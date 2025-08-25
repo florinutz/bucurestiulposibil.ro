@@ -1,0 +1,62 @@
+---
+description: High-level project map for quick reference. See map-complete.mdc for comprehensive details.
+globs:
+  - "src/**/*"
+  - "schema.sql"
+  - "wrangler.jsonc"
+alwaysApply: false
+---
+
+# "Bucureștiul Posibil" - Quick Reference
+
+## Project Overview
+Interactive citizen-engagement map at **bucurestiulposibil.ro** where citizens propose urban improvements for Bucharest. Moderated workflow: User proposals → Sanity CMS → Approval → D1 sync → Map display.
+
+**Stack**: Next.js 15 + React 19 + TypeScript + Leaflet + Sanity + Cloudflare D1/Workers
+
+## Key UI Elements
+- **Full-screen map** bounded to Bucharest with custom pins
+- **Top-left**: Clickable logo → project info modal  
+- **Top-right**: + button (active after pin placement) → proposal form
+- **Bottom-right**: Search/Help/GPS controls + zoom
+- **Pin workflow**: Click map → place orange pin → fill form → submit → moderation → approval → live pin
+
+## Data Flow
+```
+User proposal → /api/propose-point → Sanity (pending) → 
+Human approval → Webhook → /api/sanity-webhook → D1 sync → Map display
+```
+
+## Critical Files
+- `MapPage.tsx` (823 lines): Main UI, modals, controls
+- `Map.tsx` (272 lines): Leaflet integration, pin popups  
+- `propose-point/route.ts`: Proposal API endpoint
+- `sanity-webhook/route.ts`: Sync handler (Sanity → D1)
+- `geopoints/route.ts`: Map data API (D1 → Frontend)
+- `locationStore.ts`: Frontend cache and D1 interface
+- `geopoint.ts`: TypeScript interfaces for all data
+
+## Dev Workflow Essentials
+```bash
+npm run test:run      # Must pass (34/34 tests)
+npm run lint          # Must be clean
+npm run check         # Full validation pipeline
+npm run cf-typegen    # After Cloudflare changes
+```
+
+## Key Rules
+- ✅ Only approved pins exist in D1 (webhook enforces)
+- ✅ All proposals start as pending in Sanity
+- ✅ Tests must pass before committing
+- ❌ Never use `any` types (ESLint enforced)
+
+## Database Schema
+- **Sanity**: Full pin documents with status workflow
+- **D1**: `geopoints` table with lat/lng indices and submitter fields
+- **Frontend**: Cached Location objects with submittedByName for popups
+
+## Popup Display
+Existing pins show: Title, Description, and **submitter name in bold at bottom** (no prefix label)
+
+---
+📚 **For complete details**: See `map-complete.mdc` with full UI documentation, API specs, troubleshooting, and development patterns.

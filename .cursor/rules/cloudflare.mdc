@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+this nextjs project runs on cloudflare (domain attached bucurestiulposibil.ro, as you can see in wrangler.jsonc).
+it uses a d1 database with the locations to display on a map.
+In the first phase of the project, users could propose locations, and they would be sent to sanity headless cms, and on approval, the location would get 'posted' (webhook, nextjs endpoint) by sanity to cloudflare d1. Then all locations are selected from d1 and displayed on the map.
