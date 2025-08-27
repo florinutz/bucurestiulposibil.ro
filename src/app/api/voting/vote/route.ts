@@ -11,9 +11,37 @@ function generateVoteId(): string {
 }
 
 function getBrowserFingerprint(request: NextRequest, body: VoteRequest) {
+  const fingerprint = body.browserFingerprint;
+  
+  // Use the same improved hash generation as the frontend
+  const uniqueParts = [
+    fingerprint.sessionId || '',
+    fingerprint.additionalEntropy || '',
+    fingerprint.screenResolution,
+    fingerprint.timezone,
+    fingerprint.language,
+    fingerprint.platform,
+    fingerprint.userAgent.substring(0, 50) // Truncate userAgent since it's long and not unique
+  ].join('|');
+  
+  // Create a more robust hash using multiple approaches
+  const base64Hash = btoa(uniqueParts).replace(/[^a-zA-Z0-9]/g, '');
+  
+  // Also create a simple hash for additional entropy
+  let simpleHash = 0;
+  for (let i = 0; i < uniqueParts.length; i++) {
+    const char = uniqueParts.charCodeAt(i);
+    simpleHash = ((simpleHash << 5) - simpleHash) + char;
+    simpleHash = simpleHash & simpleHash; // Convert to 32bit integer
+  }
+  
+  // Combine both approaches and take first 32 characters
+  const combinedHash = base64Hash + Math.abs(simpleHash).toString(36);
+  const hash = combinedHash.substring(0, 32);
+
   return {
-    ...body.browserFingerprint,
-    hash: btoa(JSON.stringify(body.browserFingerprint)).replace(/[^a-zA-Z0-9]/g, '').substr(0, 32)
+    ...fingerprint,
+    hash
   };
 }
 

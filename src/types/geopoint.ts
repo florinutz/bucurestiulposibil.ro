@@ -88,6 +88,8 @@ export interface BrowserFingerprint {
   timezone: string
   language: string
   platform: string
+  sessionId: string
+  additionalEntropy: string
 }
 
 // Vote record in D1 database
