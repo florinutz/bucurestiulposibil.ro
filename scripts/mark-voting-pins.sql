@@ -3,29 +3,23 @@
 -- First, set is_votable to FALSE for all pins
 UPDATE geopoints SET is_votable = FALSE;
 
+-- Clear existing votes before setting up new votable pins
+TRUNCATE TABLE votes;
+
 -- Then, mark the selected pins as votable
 UPDATE geopoints SET is_votable = TRUE WHERE id IN (
-  'U2gTStYh0IVwUEOJbCsIcP', -- Acces zona lac
-  'U2gTStYh0IVwUEOJbCoE4a', -- Strand Cara  
-  'nP5GIt0J2mhTNRaq5gi63M', -- Soseaua Fundeni - spitale IOB si Fundeni
-  'nP5GIt0J2mhTNRaq5ghvjC', -- Reorganizare Cal. Grivitei si Bd. Bucurestii Noi
-  'nP5GIt0J2mhTNRaq5ghgUC', -- Parc Universitatea Spiru Haret
-  'oLHtOefD7nkFljdU8K22tW', -- Sens unic și lărgirea trotuarelor pe Drumul Jilavei
-  'oLHtOefD7nkFljdU8K1Eyy', -- Statia de metrou 1 Decembrie 1918
-  'nP5GIt0J2mhTNRaq5gfOYW', -- Gradinile Blocurilor de pe Bulevardul 1 Mai
-  'oLHtOefD7nkFljdU8K0OUk', -- Splaiul unirii NU autostrada
-  'U2gTStYh0IVwUEOJbCa3y5', -- Strada Lascar
-  'oLHtOefD7nkFljdU8K0BG0', -- Poduri pe dambovita. - Splaiul Unirii
-  'oLHtOefD7nkFljdU8K09bo', -- ȘOSEAUA DOBROEȘTI
-  'U2gTStYh0IVwUEOJbCZzek', -- Strada Foisorului
-  'U2gTStYh0IVwUEOJbCZyjA', -- Bulevardul Berceni
-  'nP5GIt0J2mhTNRaq5gf7de', -- Mutarea statuii soldatului în mijlocul intersecției
-  'oLHtOefD7nkFljdU8JzNrO', -- Biruintei
-  'oLHtOefD7nkFljdU8JzGb6', -- Gradina Japoneza - Herastrau
-  'U2gTStYh0IVwUEOJbCZ83W', -- Podul Ciurel
-  'U2gTStYh0IVwUEOJbCZ5XE', -- Intersecție Virtuții - Petre Popovat - Constructorilor
-  'nP5GIt0J2mhTNRaq5geupw', -- Piața Lahovary
-  'oLHtOefD7nkFljdU8Jz2wo'  -- Piata Universitatii
+    '76QQV0zlptBPiZCfYw5VzR', -- Piata Baneasa si Complex Romaero
+    'U2gTStYh0IVwUEOJbBKlRO', -- Zambaccian colt cu Dorobanti
+    'hAuuJ3dDLNuCTVH29fenOR', -- Parcul Vagonului
+    'oLHtOefD7nkFljdU8Hldh4', -- Corbeni cu Armeneasca
+    'oLHtOefD7nkFljdU8JsgHq', -- Intersectie Mecet cu Traian
+    'U2gTStYh0IVwUEOJbDVyfJ', -- Străzi Rezidențiale (Lunca Bradului - TITAN)
+    'oLHtOefD7nkFljdU8K0BG0', -- Poduri pe dambovita. - Splaiul Unirii
+    'nP5GIt0J2mhTNRaq5gKpte', -- Cartier giurgiului
+    'Qn7XvoKw9OlkLAmyumqtrz', -- Natiunile Unite
+    'hAuuJ3dDLNuCTVH29er2YW', -- Intersecție Șoseaua Viilor - ctin Istrati
+    'U2gTStYh0IVwUEOJbCZ5XE', -- Intersecție Virtuții - Petre Popovat - Constructorilor
+    'M9DHw4PongwVZywLd5a6tP' -- Piața Giulești
 );
 
 -- Verify the update

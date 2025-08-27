@@ -87,57 +87,8 @@ export function MapCore({
   // Create popup content based on mode
   const createPopupContent = useCallback((location: Location | VotableLocation) => {
     if (mode === 'voting') {
-      const votableLocation = location as VotableLocation;
-      const votingStore = VotingStore.getInstance();
-      const hasVotedAnywhere = votingStore.hasVoted();
-      
-      return `
-        <div class="p-4" style="min-width: 280px; max-width: 320px;">
-          <h3 class="font-semibold text-lg mb-3">${location.title}</h3>
-          <p class="text-gray-600 text-sm leading-relaxed mb-3">${location.description}</p>
-          
-          ${location.submittedByName ? `
-            <div class="border-t pt-3 mb-3">
-              <p class="text-sm font-medium text-gray-800">${location.submittedByName}</p>
-            </div>
-          ` : ''}
-
-          <div class="bg-gray-50 p-3 rounded mb-3">
-            <p class="text-sm text-gray-600 flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 12l2 2 4-4"/>
-                <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
-                <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
-                <path d="M3 12h6m6 0h6"/>
-              </svg>
-              <strong>Voturi primite:</strong> <span id="vote-count-${location.id}">${votableLocation.voteCount || 0}</span>
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <div id="vote-error-${location.id}" class="hidden bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm"></div>
-            
-            ${!hasVotedAnywhere ? `
-              <div class="flex gap-2">
-                <button
-                  id="vote-btn-${location.id}"
-                  data-location-id="${location.id}"
-                  data-location-title="${location.title.replace(/"/g, '&quot;')}"
-                  class="vote-button unvoted flex-1 px-4 py-2 rounded text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700 active:bg-green-800"
-                >
-                  🗳️ Votează
-                </button>
-              </div>
-            ` : ''}
-          </div>
-
-          <div id="vote-success-${location.id}" class="hidden mt-3 text-center">
-            <div class="text-3xl mb-2">🎉</div>
-            <p class="text-sm font-medium text-green-700">Mulțumim pentru vot!</p>
-            <p class="text-xs text-gray-600 mt-1">Votul tău a fost înregistrat cu succes.</p>
-          </div>
-        </div>
-      `;
+      // No popup content in voting mode; we use a modal instead
+      return '';
     }
 
     // Proposal mode popup
@@ -425,10 +376,17 @@ export function MapCore({
             const icon = await iconFn();
           
             const marker = L.marker([location.lat, location.lng], { icon })
-              .addTo(map)
-              .bindPopup(createPopupContent(enhancedLocation));
+              .addTo(map);
 
-            // In voting mode, popup handles everything - no additional click handlers needed
+            // In voting mode, clicking a marker should trigger an external handler to open the modal
+            if (mode === 'voting' && onPinClickRef.current) {
+              marker.on('click', () => {
+                onPinClickRef.current?.(enhancedLocation);
+              });
+            } else {
+              // Proposal mode retains popup
+              marker.bindPopup(createPopupContent(enhancedLocation));
+            }
             
             locationMarkersRef.current.push(marker);
             addedLocationIdsRef.current.add(location.id);

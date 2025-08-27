@@ -244,7 +244,7 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
     if (mode === 'voting') {
       return (
         <ul className="text-sm text-gray-600 space-y-1">
-          <li>• Fă click pe pin-urile de pe hartă pentru a vedea detaliile și a vota</li>
+          <li>• Fă click pe pinuri de pe hartă pentru a vedea detaliile și a vota</li>
           <li>• Poți vota o singură locatie.</li>
         </ul>
       );

@@ -7,11 +7,19 @@ export async function POST(request: NextRequest) {
   try {
     const { env } = getCloudflareContext()
     
+    // Support both Secrets Store bindings and plain string env (typegen variations)
+    const tokenBinding = (env as unknown as Record<string, unknown>).SANITY_API_TOKEN as unknown;
+    const resolvedToken = typeof tokenBinding === 'string'
+      ? tokenBinding
+      : (tokenBinding && typeof (tokenBinding as { get?: () => Promise<string> }).get === 'function'
+          ? await (tokenBinding as { get: () => Promise<string> }).get()
+          : process.env.SANITY_API_TOKEN);
+
     const sanityClient = createClient({
       projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
       dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
       apiVersion: '2025-01-12',
-      token: await env.SANITY_API_TOKEN.get(),
+      token: resolvedToken!,
       useCdn: false,
     })
 
@@ -105,11 +113,18 @@ export async function GET(request: NextRequest) {
     const { env } = getCloudflareContext()
     
     // Create Sanity client for reading data with Secrets Store binding
+    const tokenBinding = (env as unknown as Record<string, unknown>).SANITY_API_TOKEN as unknown;
+    const resolvedToken = typeof tokenBinding === 'string'
+      ? tokenBinding
+      : (tokenBinding && typeof (tokenBinding as { get?: () => Promise<string> }).get === 'function'
+          ? await (tokenBinding as { get: () => Promise<string> }).get()
+          : process.env.SANITY_API_TOKEN);
+
     const sanityClient = createClient({
       projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
       dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
       apiVersion: '2025-01-12',
-      token: await env.SANITY_API_TOKEN.get(), // Use Secrets Store binding
+      token: resolvedToken!, // Works with either binding or plain env
       useCdn: false,
     })
 

@@ -29,8 +29,15 @@ export async function POST(request: NextRequest) {
     
     // Handle signature verification and get body text
     const signatureResult = await handleWebhookSignature(
-      request, 
-      () => env.SANITY_WEBHOOK_SECRET.get()
+      request,
+      async () => {
+        const binding = (env as unknown as Record<string, unknown>).SANITY_WEBHOOK_SECRET as unknown
+        if (typeof binding === 'string') return binding
+        if (binding && typeof (binding as { get?: () => Promise<string> }).get === 'function') {
+          return (binding as { get: () => Promise<string> }).get()
+        }
+        return process.env.SANITY_WEBHOOK_SECRET as string
+      }
     )
     
     if (!signatureResult.success) {
@@ -207,8 +214,15 @@ export async function DELETE(request: NextRequest) {
     
     // Handle signature verification and get body text
     const signatureResult = await handleWebhookSignature(
-      request, 
-      () => env.SANITY_WEBHOOK_SECRET.get()
+      request,
+      async () => {
+        const binding = (env as unknown as Record<string, unknown>).SANITY_WEBHOOK_SECRET as unknown
+        if (typeof binding === 'string') return binding
+        if (binding && typeof (binding as { get?: () => Promise<string> }).get === 'function') {
+          return (binding as { get: () => Promise<string> }).get()
+        }
+        return process.env.SANITY_WEBHOOK_SECRET as string
+      }
     )
     
     if (!signatureResult.success) {

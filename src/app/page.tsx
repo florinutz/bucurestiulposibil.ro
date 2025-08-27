@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import type { Location } from '@/types/geopoint';
+import type { Location, VotableLocation } from '@/types/geopoint';
+import { VotingLocationModal } from '@/components/voting/VotingLocationModal';
 
 // Dynamically import MapLayout
 const MapLayout = dynamic(() => import('../components/shared/MapLayout').then(mod => ({ default: mod.MapLayout })), {
@@ -19,6 +20,7 @@ export default function VotingPage() {
   const [zoom, setZoom] = useState(13);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [votableLocations, setVotableLocations] = useState<Location[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<VotableLocation | null>(null);
 
   // Load votable locations on mount
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function VotingPage() {
       <div className="text-center">
         <h3 className="text-lg font-semibold mb-4">Bucureștiul Posibil - Faza de Vot</h3>
         <p className="text-gray-600 mb-4">
-          Salut! În această fază puteți vota pentru locațiile propuse care vor fi afișate pe hartă. Faceți click pe pin-urile pentru a vedea detaliile și a vota.
+          Salut! În această fază puteți vota pentru locațiile propuse care vor fi afișate pe hartă. Faceți click pe pinuri pentru a vedea detaliile și a vota.
         </p>
         <button
           onClick={handleWelcomePopupDismiss}
@@ -74,16 +76,29 @@ export default function VotingPage() {
   );
 
   return (
-    <MapLayout 
-      mode="voting"
-      center={center}
-      zoom={zoom}
-      onCenterChange={setCenter}
-      onZoomChange={setZoom}
-      showWelcomePopup={showWelcomePopup}
-      onWelcomePopupDismiss={handleWelcomePopupDismiss}
-      welcomeContent={welcomeContent}
-      locations={votableLocations}
-    />
+    <>
+      <MapLayout 
+        mode="voting"
+        center={center}
+        zoom={zoom}
+        onCenterChange={setCenter}
+        onZoomChange={setZoom}
+        showWelcomePopup={showWelcomePopup}
+        onWelcomePopupDismiss={handleWelcomePopupDismiss}
+        welcomeContent={welcomeContent}
+        locations={votableLocations}
+        onPinClick={(loc) => setSelectedLocation(loc as VotableLocation)}
+      />
+
+      <VotingLocationModal 
+        location={selectedLocation}
+        onClose={() => setSelectedLocation(null)}
+        onVoteSuccess={(id, newCount) => {
+          // Update vote count locally
+          setVotableLocations(prev => prev.map(l => (l.id === id ? { ...l, voteCount: newCount } as unknown as Location : l)));
+          setSelectedLocation(prev => (prev && prev.id === id ? { ...prev, voteCount: newCount } : prev));
+        }}
+      />
+    </>
   );
 }
