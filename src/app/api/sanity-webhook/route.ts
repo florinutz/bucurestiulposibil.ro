@@ -25,19 +25,12 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Request headers:', Object.fromEntries(request.headers.entries()))
     
-    const { env } = getCloudflareContext()
+    const { env } = await getCloudflareContext()
     
     // Handle signature verification and get body text
     const signatureResult = await handleWebhookSignature(
       request,
-      async () => {
-        const binding = (env as unknown as Record<string, unknown>).SANITY_WEBHOOK_SECRET as unknown
-        if (typeof binding === 'string') return binding
-        if (binding && typeof (binding as { get?: () => Promise<string> }).get === 'function') {
-          return (binding as { get: () => Promise<string> }).get()
-        }
-        return process.env.SANITY_WEBHOOK_SECRET as string
-      }
+      () => env.SANITY_WEBHOOK_SECRET.get()
     )
     
     if (!signatureResult.success) {
@@ -133,7 +126,7 @@ async function handlePinUpdate(sanityData: SanityPin) {
 
 async function upsertToD1(data: D1Pin) {
   try {
-    const { env } = getCloudflareContext()
+    const { env } = await getCloudflareContext()
     const db = env.DB as D1Database
     
     if (!db) {
@@ -179,7 +172,7 @@ async function upsertToD1(data: D1Pin) {
 
 async function deleteFromD1(id: string) {
   try {
-    const { env } = getCloudflareContext()
+    const { env } = await getCloudflareContext()
     const db = env.DB as D1Database
     
     if (!db) {
@@ -210,19 +203,12 @@ export async function DELETE(request: NextRequest) {
     console.log('Request method:', request.method)
     console.log('Request headers:', Object.fromEntries(request.headers.entries()))
     
-    const { env } = getCloudflareContext()
+    const { env } = await getCloudflareContext()
     
     // Handle signature verification and get body text
     const signatureResult = await handleWebhookSignature(
       request,
-      async () => {
-        const binding = (env as unknown as Record<string, unknown>).SANITY_WEBHOOK_SECRET as unknown
-        if (typeof binding === 'string') return binding
-        if (binding && typeof (binding as { get?: () => Promise<string> }).get === 'function') {
-          return (binding as { get: () => Promise<string> }).get()
-        }
-        return process.env.SANITY_WEBHOOK_SECRET as string
-      }
+      () => env.SANITY_WEBHOOK_SECRET.get()
     )
     
     if (!signatureResult.success) {

@@ -110,21 +110,14 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check if a point already exists (optional)
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getCloudflareContext()
+    const { env } = await getCloudflareContext()
     
     // Create Sanity client for reading data with Secrets Store binding
-    const tokenBinding = (env as unknown as Record<string, unknown>).SANITY_API_TOKEN as unknown;
-    const resolvedToken = typeof tokenBinding === 'string'
-      ? tokenBinding
-      : (tokenBinding && typeof (tokenBinding as { get?: () => Promise<string> }).get === 'function'
-          ? await (tokenBinding as { get: () => Promise<string> }).get()
-          : process.env.SANITY_API_TOKEN);
-
     const sanityClient = createClient({
       projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
       dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
       apiVersion: '2025-01-12',
-      token: resolvedToken!, // Works with either binding or plain env
+      token: await env.SANITY_API_TOKEN.get(),
       useCdn: false,
     })
 
