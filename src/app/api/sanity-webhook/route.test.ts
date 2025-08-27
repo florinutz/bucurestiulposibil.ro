@@ -5,6 +5,7 @@ import { SanityPin } from '@/types/geopoint'
 import { isValidSignature } from '@sanity/webhook'
 
 // Mock the Cloudflare context
+const mockFirst = vi.fn()
 vi.mock('@opennextjs/cloudflare', () => ({
   getCloudflareContext: vi.fn(() => ({
     env: {
@@ -15,6 +16,7 @@ vi.mock('@opennextjs/cloudflare', () => ({
         prepare: vi.fn().mockReturnValue({
           bind: vi.fn().mockReturnValue({
             run: vi.fn().mockResolvedValue({}),
+            first: mockFirst,
           }),
         }),
       },
@@ -67,6 +69,8 @@ describe('/api/sanity-webhook', () => {
     mockHeaders.clear()
     // Default mock for request body
     mockText.mockResolvedValue('{"_id":"test-pin-id","_type":"pin"}')
+    // Default mock for first() - no existing record
+    mockFirst.mockResolvedValue(null)
   })
 
   describe('POST', () => {
@@ -203,6 +207,90 @@ describe('/api/sanity-webhook', () => {
       const response = await POST(request)
       // Should either succeed or fail gracefully
       expect([200, 401, 500]).toContain(response.status)
+    })
+
+    it('should preserve is_votable status when updating existing votable pin', async () => {
+      const webhookData: SanityPin = {
+        _id: 'existing-votable-pin',
+        _type: 'pin',
+        _createdAt: '2025-01-01T00:00:00Z',
+        _updatedAt: '2025-01-01T12:00:00Z',
+        _rev: 'test-rev-updated',
+        title: 'Updated Votable Point',
+        slug: { current: 'updated-votable-point' },
+        location: { lat: 44.4268, lng: 26.1025 },
+        description: 'Updated description for votable location',
+        status: 'approved',
+        submittedBy: { name: 'Test User', email: 'test@example.com', ip: '127.0.0.1' },
+        approvedAt: '2025-01-01T00:00:00Z',
+        approvedBy: 'admin',
+      }
+
+      // Mock existing record with is_votable = 1
+      mockFirst.mockResolvedValueOnce({ is_votable: 1 })
+      
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
+
+      const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'sanity-webhook-signature': '01020304'
+        },
+        body: JSON.stringify(webhookData),
+      })
+
+      const response = await POST(request)
+      const data = await response.json() as { success: boolean }
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      
+      // Verify that the SELECT query was called to check existing is_votable
+      expect(mockFirst).toHaveBeenCalledTimes(1)
+    })
+
+    it('should default is_votable to 0 for new pin records', async () => {
+      const webhookData: SanityPin = {
+        _id: 'new-pin-id',
+        _type: 'pin',
+        _createdAt: '2025-01-01T00:00:00Z',
+        _updatedAt: '2025-01-01T00:00:00Z',
+        _rev: 'test-rev',
+        title: 'New Point',
+        slug: { current: 'new-point' },
+        location: { lat: 44.4268, lng: 26.1025 },
+        description: 'New location description',
+        status: 'approved',
+        submittedBy: { name: 'Test User', email: 'test@example.com', ip: '127.0.0.1' },
+        approvedAt: '2025-01-01T00:00:00Z',
+        approvedBy: 'admin',
+      }
+
+      // Mock no existing record (null response)
+      mockFirst.mockResolvedValueOnce(null)
+      
+      // Mock the request body
+      mockText.mockResolvedValueOnce(JSON.stringify(webhookData))
+
+      const request = new NextRequest('http://localhost:3000/api/sanity-webhook', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'sanity-webhook-signature': '01020304'
+        },
+        body: JSON.stringify(webhookData),
+      })
+
+      const response = await POST(request)
+      const data = await response.json() as { success: boolean }
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      
+      // Verify that the SELECT query was called to check for existing record
+      expect(mockFirst).toHaveBeenCalledTimes(1)
     })
 
     it('should return 401 for invalid signature', async () => {

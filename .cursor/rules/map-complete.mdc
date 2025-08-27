@@ -1,12 +1,5 @@
 ---
-description: Comprehensive project map covering UI, data flow, and development guidelines for maintaining code quality and system integrity.
-globs:
-  - "src/**/*"
-  - "schema.sql"
-  - "wrangler.jsonc"
-  - "package.json"
-  - "*.config.*"
-alwaysApply: false
+alwaysApply: true
 ---
 
 # "Bucureștiul Posibil" - Complete Project Map
@@ -22,16 +15,18 @@ alwaysApply: false
 
 ### Initial Load & Welcome Flow
 1. **App Loading**: Gradient loading screen while map initializes (SSR disabled for Leaflet)
-2. **Welcome Popup**: Monthly popup (localStorage tracked) explaining pin placement process
-   - Title: "Bucureștiul Posibil"
-   - Instructions in Romanian on how to propose locations
+2. **Welcome Popup**:
+   - On `/` (voting): Monthly popup explaining how to browse pins and vote
+   - On `/propune` (proposal): Monthly popup explaining pin placement and submission
    - "Am înțeles" dismiss button, sets 30-day timer
 
 ### Main Map Interface
 - **Full-screen Leaflet map** bounded to Bucharest (44.330819,25.933960 to 44.552407,26.258057)
 - **OpenStreetMap tiles** with green tint styling
 - **Zoom range**: 11-17, sticky bounds prevent panning outside city
-- **Pin types**: Custom icons (/pin.png, 32x32) for approved, orange SVG (48x48) for proposals
+- **Pin types**:
+  - Approved/votable: Custom icons (/pin.png, 32x32)
+  - Proposal placement: Orange SVG (48x48)
 
 ### UI Controls (Positioned Layout)
 
@@ -40,6 +35,7 @@ alwaysApply: false
 - Opens project info modal with organization details and AFCN funding info
 
 #### Top-Right: Add Location Button  
+- Appears on `/propune` only
 - "+" icon, gray when inactive, green with wobble animation when pin placed
 - Only functional after placing pin on map
 
@@ -53,17 +49,23 @@ alwaysApply: false
 #### Bottom-Right: Zoom Controls
 - Standard Leaflet zoom in/out buttons
 
-### Pin Placement Workflow
+### Pin Placement Workflow (route: `/propune`)
 1. **Click map** → Orange special pin appears with helper popup
 2. **Click + button** → Opens proposal form modal
 3. **Fill form** → Title (req), description (req), name/email (opt)
 4. **Submit** → POST to `/api/propose-point`
 5. **Success** → Fireworks animation modal, form cleared, pin removed
 
+### Voting Workflow (route: `/`)
+1. **Load map** → Only pins with `is_votable = TRUE` are shown
+2. **Click pin** → Voting modal with image, details, and current vote count
+3. **Vote** → POST to `/api/voting/vote` (client allows one total vote; server enforces one per location per fingerprint)
+4. **Indicator** → “Votul tău” indicator appears top-right and shows chosen location
+
 ### Location Popups (Existing Pins)
 - Click approved pin → popup with title, description
 - **Submitter name**: If present, shown at bottom in bold with top border separator
-- Format: Just the name (no "Propus de:" prefix as user removed it)
+- Format: Just the name (no "Propus de:" prefix)
 
 ### Modal System
 - **Proposal Form**: Full form with validation, loading states, error display
@@ -84,11 +86,22 @@ alwaysApply: false
 🔐 Signature verified → 💾 D1 upsert → 🗺️ Map displays → 👆 Popup shows submitter
 ```
 
+### Voting Workflow Chain
+```
+🗺️ Load map (route: /) → 📥 GET /api/voting/geopoints (only is_votable=TRUE) →
+📍 User clicks pin → 🪟 Voting modal opens → 🗳️ POST /api/voting/vote →
+✅ 200 with new count or 409 if already voted (per fingerprint) →
+📈 UI updates vote count + shows “Votul tău” indicator
+```
+
 ### API Data Flow
 1. **Proposal**: Frontend → `/api/propose-point` → Sanity (status: pending)
 2. **Moderation**: Sanity Studio → Human review → Status change
-3. **Sync**: Sanity webhook → `/api/sanity-webhook` → D1 upsert/delete
-4. **Display**: Map load → `/api/geopoints` → D1 query → Pin rendering
+3. **Sync**: Sanity webhook → `/api/sanity-webhook` → D1 upsert/delete (approved only)
+4. **Display (proposal map)**: `/api/geopoints` → Approved pins for `/propune`
+5. **Display (voting map)**: `/api/voting/geopoints` → Votable pins + vote counts for `/`
+6. **Vote**: `/api/voting/vote` → Insert vote, return `newVoteCount`
+7. **User votes sync**: `/api/voting/user-votes` → List of voted pin IDs by fingerprint
 
 ---
 
@@ -119,12 +132,43 @@ CREATE INDEX idx_geopoints_location ON geopoints(lat, lng);
 CREATE INDEX idx_geopoints_slug ON geopoints(slug);
 ```
 
-### Frontend Interface (Location)
+### Voting Migration Additions
+```sql
+ALTER TABLE geopoints ADD COLUMN is_votable BOOLEAN DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_geopoints_votable ON geopoints(is_votable);
+
+CREATE TABLE IF NOT EXISTS votes (
+  id TEXT PRIMARY KEY,
+  geopoint_id TEXT NOT NULL,
+  voted_at TEXT NOT NULL,
+  browser_fingerprint TEXT NOT NULL,
+  ip_address TEXT,
+  user_agent TEXT,
+  screen_resolution TEXT,
+  timezone TEXT,
+  session_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (geopoint_id) REFERENCES geopoints(id),
+  UNIQUE(geopoint_id, browser_fingerprint)
+);
+
+CREATE INDEX IF NOT EXISTS idx_votes_geopoint ON votes(geopoint_id);
+CREATE INDEX IF NOT EXISTS idx_votes_fingerprint ON votes(browser_fingerprint);
+CREATE INDEX IF NOT EXISTS idx_votes_created_at ON votes(created_at);
+```
+
+### Frontend Interfaces
 ```typescript
 interface Location {
   id: string, title: string, description: string,
   lat: number, lng: number, status: 'approved',
-  createdAt: Date, submittedByName?: string  // For popup display
+  createdAt: Date, submittedByName?: string
+}
+
+interface VotableLocation extends Location {
+  isVotable: boolean
+  voteCount: number
+  userHasVoted?: boolean
 }
 ```
 
@@ -133,17 +177,28 @@ interface Location {
 ## File Structure & Code Organization
 
 ### Core Components (src/components/)
-- **`MapPage.tsx`** (823 lines): Main UI orchestration, all modals, search, GPS, proposal flow
-- **`Map.tsx`** (272 lines): Leaflet integration, pin rendering, popup HTML with submitter names
+- **`shared/MapLayout.tsx`**: Main UI orchestration, controls, welcome/logo modals; `mode` toggles behaviors
+- **`shared/MapCore.tsx`**: Leaflet integration, pin rendering, interactions
+- **`shared/MapControls.tsx`**: Search/help/GPS controls
+- **`voting/VotingLocationModal.tsx`**: Voting modal with image and vote action
+- **`proposal/ProposalMapPage.tsx`**: Proposal flow composition
 
 ### API Endpoints (src/app/api/)
-- **`propose-point/route.ts`** (170 lines): Accepts proposals, validates, creates Sanity docs
-- **`sanity-webhook/route.ts`** (257 lines): Webhook handler, signature verification, D1 sync
-- **`geopoints/route.ts`** (80 lines): Fetches approved pins from D1, supports bounds filtering
+- Proposal:
+  - **`propose-point/route.ts`**: Accepts proposals, validates, creates Sanity docs
+  - **`sanity-webhook/route.ts`**: Webhook handler, signature verification, D1 sync
+  - **`geopoints/route.ts`**: Fetches approved pins (proposal map)
+- Voting:
+  - **`voting/geopoints/route.ts`**: Lists votable pins with `voteCount`
+  - **`voting/vote/route.ts`**: Records a vote; returns `newVoteCount`; 409 on duplicate per fingerprint
+  - **`voting/user-votes/route.ts`**: Returns voted pin IDs for a browser fingerprint
 
 ### Data Layer (src/lib/, src/types/)
-- **`locationStore.ts`** (147 lines): Frontend cache, D1 interface, Location mapping
-- **`geopoint.ts`** (78 lines): TypeScript interfaces for all data structures
+- **`locationStore.ts`**: Frontend cache for proposal locations
+- **`votingStore.ts`**: Voting state, fingerprinting, local single-vote enforcement, API calls
+- **`browserFingerprint.ts`**: Fingerprint generation and hashing helpers
+- **`locationImages.ts`**: Resolve location image URLs for voting modal
+- **`types/geopoint.ts`**: All data structures, including `VotableLocation`, `VoteRequest/Response`
 - **`webhookUtils.ts`**: HMAC signature verification utilities
 
 ### Configuration
@@ -244,6 +299,9 @@ npm run db:count:remote    # Production record count
 - **Webhook security**: HMAC signature verification required
 - **Input validation**: Server-side validation all user inputs  
 - **Content moderation**: All proposals require human approval
+ - **Voting anti-fraud**:
+   - Server: One vote per location per fingerprint (UNIQUE constraint), stores IP/UA/metadata
+   - Client: Single total vote enforced via localStorage + fingerprint; shows persistent indicator
 
 ### Performance Optimizations
 - **Map rendering**: SSR disabled, efficient marker management
@@ -257,7 +315,8 @@ npm run db:count:remote    # Production record count
 
 ### Map Issues
 - **Not loading**: Check SSR disabled, Leaflet CSS loaded, bounds correct
-- **Pins missing**: Verify D1 sync, check webhook logs, confirm approved status
+- **Pins missing (proposal)**: Verify D1 sync, check webhook logs, confirm approved status
+- **Pins missing (voting)**: Ensure `is_votable = TRUE` on expected pins; verify `/api/voting/geopoints`
 
 ### Webhook Problems  
 - **Not firing**: Verify URL in Sanity, check secret configuration
@@ -267,6 +326,10 @@ npm run db:count:remote    # Production record count
 - **Type errors**: Run `npm run cf-typegen`, check interface exports
 - **Test failures**: Review mocks, check API contracts
 - **ESLint errors**: Fix any violations, ensure no `any` types
+
+### Voting Issues
+- **Duplicate vote**: Expect 409 if voting same pin with same fingerprint
+- **User claims already voted**: Check fingerprint sync (`/api/voting/user-votes`) and localStorage; consider clearing `votedLocation` for testing
 
 ---
 

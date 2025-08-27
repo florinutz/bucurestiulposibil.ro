@@ -103,6 +103,29 @@ async function handlePinUpdate(sanityData: SanityPin) {
   // Pin is approved - sync to D1
   console.log(`Pin ${sanityData._id} is approved, syncing to D1`)
 
+  // Check if record exists in D1 to preserve is_votable status
+  const { env } = await getCloudflareContext()
+  const db = env.DB as D1Database
+  let existingIsVotable = 0 // Default for new records
+  
+  if (db) {
+    try {
+      const existingRecord = await db.prepare('SELECT is_votable FROM geopoints WHERE id = ?')
+        .bind(sanityData._id)
+        .first()
+      
+      if (existingRecord) {
+        existingIsVotable = existingRecord.is_votable as number
+        console.log(`Preserving existing is_votable value: ${existingIsVotable} for pin ${sanityData._id}`)
+      } else {
+        console.log(`New pin ${sanityData._id}, using default is_votable: 0`)
+      }
+    } catch (error) {
+      console.error('Error querying existing is_votable status:', error)
+      // Continue with default value if query fails
+    }
+  }
+
   // Convert Sanity data to D1 format
   const d1Data: D1Pin = {
     id: sanityData._id,
@@ -117,7 +140,7 @@ async function handlePinUpdate(sanityData: SanityPin) {
     created_at: sanityData._createdAt,
     updated_at: sanityData._updatedAt,
     approved_at: sanityData.approvedAt || null,
-    is_votable: 0, // Default to not votable for new proposals
+    is_votable: existingIsVotable, // Preserve existing votable status
     approved_by: sanityData.approvedBy || null,
   }
 
