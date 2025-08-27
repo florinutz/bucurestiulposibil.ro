@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { X, Vote, CheckCircle2 } from 'lucide-react';
 import type { VotableLocation } from '@/types/geopoint';
@@ -13,6 +14,18 @@ interface VotingLocationModalProps {
 }
 
 export function VotingLocationModal({ location, onClose, onVoteSuccess }: VotingLocationModalProps) {
+  // ESC key handling
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!location) return null;
 
   const votingStore = VotingStore.getInstance();
@@ -24,6 +37,11 @@ export function VotingLocationModal({ location, onClose, onVoteSuccess }: Voting
     if (hasVotedAnywhere) return;
     const result = await votingStore.castVote(location.id, location.title);
     onVoteSuccess(location.id, result.newVoteCount);
+    
+    // Trigger custom event to update the voted location indicator immediately
+    window.dispatchEvent(new CustomEvent('voteSuccess', { 
+      detail: { locationId: location.id, locationTitle: location.title }
+    }));
   };
 
   return (

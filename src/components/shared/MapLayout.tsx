@@ -179,7 +179,19 @@ export function MapLayout({
       {/* Voted Location Indicator - top right */}
       {mode === 'voting' && votedLocation && (
         <div className="pointer-events-none fixed top-4 right-4 z-20">
-          <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 max-w-xs">
+          <div 
+            className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 max-w-xs cursor-pointer hover:bg-white transition-colors"
+            onClick={() => {
+              // Find the location in the locations array and trigger the pin click
+              if (locations.length > 0 && onPinClick) {
+                const location = locations.find(loc => loc.id === votedLocation.id);
+                if (location) {
+                  onPinClick(location);
+                }
+              }
+            }}
+            title="Click pentru a vedea detaliile locației"
+          >
             <div className="flex items-center gap-2 text-sm">
               <span className="text-green-600 font-medium">✓ Votul tău:</span>
             </div>

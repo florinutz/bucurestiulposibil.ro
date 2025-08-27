@@ -65,13 +65,25 @@ export function MapCore({
 
       if (mode === 'voting' && location && 'userHasVoted' in location) {
         const votableLocation = location as VotableLocation;
-        return L.icon({
-          iconUrl: '/pin.png',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-          popupAnchor: [0, -32],
-          className: votableLocation.userHasVoted ? 'voted-pin' : 'unvoted-pin'
-        });
+        if (votableLocation.userHasVoted) {
+          // Voted pin: bigger size and red tint
+          return L.icon({
+            iconUrl: '/pin.png',
+            iconSize: [48, 48], // Bigger size
+            iconAnchor: [24, 48], // Adjusted anchor for bigger size
+            popupAnchor: [0, -48], // Adjusted popup anchor
+            className: 'voted-pin'
+          });
+        } else {
+          // Unvoted pin: normal size
+          return L.icon({
+            iconUrl: '/pin.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
+            className: 'unvoted-pin'
+          });
+        }
       }
 
       // Default pin for approved locations
@@ -101,86 +113,7 @@ export function MapCore({
     `;
   }, [mode]);
 
-  // Handle vote button clicks within popups
-  const handleVoteButtonClick = useCallback(async (event: Event) => {
-    const target = event.target as HTMLElement;
-    if (!target.classList.contains('vote-button') || target.hasAttribute('disabled')) {
-      return;
-    }
 
-    const locationId = target.getAttribute('data-location-id');
-    const locationTitle = target.getAttribute('data-location-title');
-    
-    if (!locationId || !locationTitle) return;
-
-          // Show loading state
-      target.innerHTML = '⏳ Se înregistrează...';
-      target.classList.add('opacity-50', 'cursor-wait');
-
-    // Hide any existing error
-    const errorElement = document.getElementById(`vote-error-${locationId}`);
-    if (errorElement) {
-      errorElement.classList.add('hidden');
-    }
-
-    try {
-      const votingStore = VotingStore.getInstance();
-      const result = await votingStore.castVote(locationId, locationTitle);
-
-      // Update vote count in popup
-      const voteCountElement = document.getElementById(`vote-count-${locationId}`);
-      if (voteCountElement) {
-        voteCountElement.textContent = result.newVoteCount.toString();
-      }
-
-      // Hide the voted button since user can only vote once
-      const buttonContainer = target.closest('.flex.gap-2') as HTMLElement;
-      if (buttonContainer) {
-        buttonContainer.style.display = 'none';
-      }
-
-      // Show success message
-      const successElement = document.getElementById(`vote-success-${locationId}`);
-      if (successElement) {
-        successElement.classList.remove('hidden');
-        
-        // Hide success message after 3 seconds
-        setTimeout(() => {
-          if (successElement) {
-            successElement.classList.add('hidden');
-          }
-        }, 3000);
-      }
-
-      // Hide all vote buttons since user can only vote once
-      const allVoteButtons = document.querySelectorAll('.vote-button');
-      allVoteButtons.forEach(button => {
-        if (button !== target) {
-          // Hide the button container (parent div)
-          const buttonContainer = button.closest('.flex.gap-2') as HTMLElement;
-          if (buttonContainer) {
-            buttonContainer.style.display = 'none';
-          }
-        }
-      });
-
-      // Trigger custom event to update the voted location indicator
-      window.dispatchEvent(new CustomEvent('voteSuccess', { 
-        detail: { locationId, locationTitle }
-      }));
-
-    } catch (error) {
-      // Show error message
-      if (errorElement) {
-        errorElement.textContent = error instanceof Error ? error.message : 'Eroare la înregistrarea votului';
-        errorElement.classList.remove('hidden');
-      }
-
-      // Reset button state
-      target.innerHTML = '🗳️ Votează';
-      target.classList.remove('opacity-50', 'cursor-wait');
-    }
-  }, []);
 
   // Initialize map only once
   useEffect(() => {
@@ -264,11 +197,7 @@ export function MapCore({
           });
         }
 
-        // Add event delegation for voting buttons in popup
-        if (mode === 'voting') {
-          // Add click event listener to the map container for vote buttons
-          map.getContainer().addEventListener('click', handleVoteButtonClick);
-        }
+
 
         setIsMapReady(true);
 
@@ -281,15 +210,11 @@ export function MapCore({
 
     return () => {
       if (mapInstanceRef.current) {
-        // Clean up event listeners
-        if (mode === 'voting') {
-          mapInstanceRef.current.getContainer().removeEventListener('click', handleVoteButtonClick);
-        }
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, [isClient, center, zoom, mode, handleVoteButtonClick]); // Include all dependencies
+  }, [isClient, center, zoom, mode]); // Include all dependencies
 
   // Update map view when center/zoom changes
   useEffect(() => {
@@ -378,6 +303,15 @@ export function MapCore({
             const marker = L.marker([location.lat, location.lng], { icon })
               .addTo(map);
 
+            // Add tooltip showing the location title on hover
+            marker.bindTooltip(location.title, {
+              direction: 'top',
+              offset: [0, -10],
+              className: 'custom-tooltip',
+              permanent: false,
+              sticky: true
+            });
+
             // In voting mode, clicking a marker should trigger an external handler to open the modal
             if (mode === 'voting' && onPinClickRef.current) {
               marker.on('click', () => {
@@ -416,17 +350,35 @@ export function MapCore({
           data-testid="map-container"
           style={{ minHeight: '100vh' }}
         />
-        {/* Add CSS for voted/unvoted pins in voting mode */}
-        {mode === 'voting' && (
-          <style jsx>{`
-            .voted-pin {
-              filter: hue-rotate(120deg) saturate(0.7);
-            }
-            .unvoted-pin {
-              filter: none;
-            }
-          `}</style>
-        )}
+        {/* Add CSS for voted/unvoted pins in voting mode and custom tooltips */}
+        <style jsx global>{`
+          .voted-pin {
+            filter: hue-rotate(0deg) saturate(1.5) brightness(1.2);
+          }
+          .unvoted-pin {
+            filter: none;
+          }
+          
+          /* Custom tooltip styling */
+          .custom-tooltip {
+            background: rgba(0, 0, 0, 0.8);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          
+          .custom-tooltip::before {
+            border-top-color: rgba(0, 0, 0, 0.8);
+          }
+        `}</style>
       </div>
     )
   );
