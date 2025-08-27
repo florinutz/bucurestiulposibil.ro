@@ -4,7 +4,7 @@
 UPDATE geopoints SET is_votable = FALSE;
 
 -- Clear existing votes before setting up new votable pins
-TRUNCATE TABLE votes;
+delete from votes;
 
 -- Then, mark the selected pins as votable
 UPDATE geopoints SET is_votable = TRUE WHERE id IN (
