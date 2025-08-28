@@ -50,7 +50,7 @@ export function VotingLocationModal({ location, onClose, onVoteSuccess }: Voting
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal container */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl xl:max-w-7xl overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Close button */}
         <button
           className="absolute top-4 right-4 z-10 p-2.5 rounded-full hover:bg-black/5"
@@ -61,7 +61,7 @@ export function VotingLocationModal({ location, onClose, onVoteSuccess }: Voting
         </button>
 
         {/* Two-column layout (stack on mobile) */}
-        <div className="grid grid-cols-1 md:grid-cols-5">
+        <div className="grid grid-cols-1 md:grid-cols-5 flex-1 min-h-0">
           {/* Image column */}
           <div className="relative bg-gray-100 min-h-[42vh] md:min-h-[24rem] lg:min-h-[30rem] md:col-span-3">
             {imageUrl ? (
@@ -82,39 +82,58 @@ export function VotingLocationModal({ location, onClose, onVoteSuccess }: Voting
           </div>
 
           {/* Content column */}
-          <div className="p-6 md:p-8 lg:p-10 space-y-5 md:col-span-2">
-            <div>
-              <h3 className="text-2xl lg:text-3xl font-semibold leading-tight tracking-tight">{location.title}</h3>
-              {location.submittedByName && (
-                <p className="text-sm text-gray-600 mt-1">{location.submittedByName}</p>
-              )}
-            </div>
+          <div className="md:col-span-2 flex flex-col min-h-0">
+            <div className="p-6 md:p-8 lg:p-10 flex flex-col h-full">
+              {/* Fixed header */}
+              <div className="flex-shrink-0 mb-5">
+                <h3 className="text-2xl lg:text-3xl font-semibold leading-tight tracking-tight">{location.title}</h3>
+                {location.submittedByName && (
+                  <p className="text-sm text-gray-600 mt-1">{location.submittedByName}</p>
+                )}
+              </div>
 
-            <p className="text-gray-700 text-[0.95rem] leading-relaxed whitespace-pre-line">
-              {location.description}
-            </p>
-
-            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 inline-flex items-center gap-2 shadow-sm">
-              <Vote size={16} />
-              <strong>Voturi primite:</strong>
-              <span>{location.voteCount}</span>
-            </div>
-
-            <div>
-              {!hasVotedAnywhere ? (
-                <button
-                  onClick={handleVote}
-                  className="mt-3 inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-sm"
+              {/* Scrollable description */}
+              <div className="flex-1 min-h-0 mb-5">
+                <div 
+                  className="h-full overflow-y-auto pr-2"
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#d1d5db #f3f4f6'
+                  }}
                 >
-                  <Vote size={16} />
-                  Votează
-                </button>
-              ) : hasVotedThis ? (
-                <div className="mt-3 inline-flex items-center gap-2 text-green-700">
-                  <CheckCircle2 size={18} />
-                  Ai votat această locație
+                  <div className="prose prose-gray max-w-none">
+                    <p className="text-gray-700 text-[0.95rem] leading-relaxed whitespace-pre-line">
+                      {location.description}
+                    </p>
+                  </div>
                 </div>
-              ) : null}
+              </div>
+
+              {/* Fixed footer */}
+              <div className="flex-shrink-0 space-y-4">
+                <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 inline-flex items-center gap-2 shadow-sm">
+                  <Vote size={16} />
+                  <strong>Voturi primite:</strong>
+                  <span>{location.voteCount}</span>
+                </div>
+
+                <div>
+                  {!hasVotedAnywhere ? (
+                    <button
+                      onClick={handleVote}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-sm"
+                    >
+                      <Vote size={16} />
+                      Votează
+                    </button>
+                  ) : hasVotedThis ? (
+                    <div className="inline-flex items-center gap-2 text-green-700">
+                      <CheckCircle2 size={18} />
+                      Ai votat această locație
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,13 @@
 import type { BrowserFingerprint } from '@/types/geopoint';
 
+// Extended Navigator interface for device memory and connection info
+interface ExtendedNavigator extends Navigator {
+  deviceMemory?: number;
+  connection?: {
+    effectiveType?: string;
+  };
+}
+
 /**
  * Generate a unique session identifier that persists across page reloads
  * but changes for different browser sessions/contexts.
@@ -38,16 +46,14 @@ function generateAdditionalEntropy(): string {
   }
   
   // Memory (if available)
-  if ('deviceMemory' in navigator) {
-    entropy.push(`mem:${(navigator as any).deviceMemory}`);
+  const extNavigator = navigator as ExtendedNavigator;
+  if ('deviceMemory' in navigator && extNavigator.deviceMemory) {
+    entropy.push(`mem:${extNavigator.deviceMemory}`);
   }
   
   // Connection type (if available)
-  if ('connection' in navigator) {
-    const conn = (navigator as any).connection;
-    if (conn && conn.effectiveType) {
-      entropy.push(`conn:${conn.effectiveType}`);
-    }
+  if ('connection' in navigator && extNavigator.connection?.effectiveType) {
+    entropy.push(`conn:${extNavigator.connection.effectiveType}`);
   }
   
   // Available screen space
