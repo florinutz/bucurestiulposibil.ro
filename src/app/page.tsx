@@ -52,44 +52,23 @@ export default function HomePage() {
               <div className="relative">
                 <div className="absolute inset-0 bg-white/10 blur-xl rounded-full"></div>
                 <p className="relative text-xl md:text-2xl lg:text-3xl text-white/95 font-light leading-relaxed max-w-3xl mx-auto drop-shadow-lg">
-                  Vă mulțumim pentru propuneri și voturi! 
+                  Vă mulțumim pentru propuneri și voturi.
                   <br className="hidden sm:block" />
-                  Acum lucrăm la reimaginarea lor în VR.
+                  Panoramele vor fi accesibile aici începând cu 5 octombrie.
                 </p>
               </div>
             </div>
 
-            {/* Social media section with beautiful cards */}
+            {/* Event section with Facebook link */}
             <div className="mb-12">
               <p className="text-lg md:text-xl text-white/80 mb-8 font-light drop-shadow-lg">
-                Între timp ne puteți urmări pe Social Media:
+                Vă așteptăm între 3 și 5 Oct la expoziția de lansare:
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                {/* Instagram Card */}
+              <div className="flex justify-center">
+                {/* Facebook Event Link */}
                 <a
-                  href="https://www.instagram.com/strazi.pentru.oameni"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative overflow-hidden bg-gradient-to-br from-emerald-500/30 to-teal-500/30 backdrop-blur-md border border-emerald-300/20 rounded-2xl p-6 transition-all duration-500 hover:scale-105 hover:border-emerald-300/40 hover:shadow-2xl hover:shadow-emerald-500/30"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/0 to-teal-600/0 group-hover:from-emerald-600/15 group-hover:to-teal-600/15 transition-all duration-500"></div>
-                  <div className="relative flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987s11.987-5.367 11.987-11.987C24.004 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.348-1.051-2.348-2.348s1.051-2.348 2.348-2.348 2.348 1.051 2.348 2.348-1.051 2.348-2.348 2.348zm7.718 0c-1.297 0-2.348-1.051-2.348-2.348s1.051-2.348 2.348-2.348 2.348 1.051 2.348 2.348-1.051 2.348-2.348 2.348z"/>
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-white font-semibold group-hover:text-emerald-300 transition-colors drop-shadow-sm">Instagram</div>
-                      <div className="text-white/70 text-sm drop-shadow-sm">@strazi.pentru.oameni</div>
-                    </div>
-                  </div>
-                </a>
-
-                {/* Facebook Card */}
-                <a
-                  href="https://www.facebook.com/share/1Cn8JTf861/"
+                  href="https://www.facebook.com/share/17CeD9k5uZ/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative overflow-hidden bg-gradient-to-br from-cyan-500/30 to-blue-500/30 backdrop-blur-md border border-cyan-300/20 rounded-2xl p-6 transition-all duration-500 hover:scale-105 hover:border-cyan-300/40 hover:shadow-2xl hover:shadow-cyan-500/30"
@@ -102,8 +81,8 @@ export default function HomePage() {
                       </svg>
                     </div>
                     <div className="text-left">
-                      <div className="text-white font-semibold group-hover:text-cyan-300 transition-colors drop-shadow-sm">Facebook</div>
-                      <div className="text-white/70 text-sm drop-shadow-sm">Urmărește-ne</div>
+                      <div className="text-white font-semibold group-hover:text-cyan-300 transition-colors drop-shadow-sm">Evenimentul pe Facebook</div>
+                      <div className="text-white/70 text-sm drop-shadow-sm">Detalii despre expoziție</div>
                     </div>
                   </div>
                 </a>
