@@ -54,7 +54,7 @@ export default function HomePage() {
                 <p className="relative text-xl md:text-2xl lg:text-3xl text-white/95 font-light leading-relaxed max-w-3xl mx-auto drop-shadow-lg">
                   Vă mulțumim pentru propuneri și voturi.
                   <br className="hidden sm:block" />
-                  Panoramele vor fi accesibile aici începând cu 5 octombrie.
+                  Panoramele vor fi accesibile aici începând cu 3 octombrie.
                 </p>
               </div>
             </div>
