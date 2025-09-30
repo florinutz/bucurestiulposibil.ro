@@ -55,10 +55,10 @@ export function MapLayout({
     setShowLogoPopup(true);
   }, []);
 
-    // Handle map click in voting mode (act like ESC)
+    // Handle map click in voting/tour mode (act like ESC)
   const handleMapClick = useCallback(() => {
-    if (mode === 'voting') {
-      // Close any open modals when map is clicked in voting mode
+    if (mode === 'voting' || mode === 'tour') {
+      // Close any open modals when map is clicked in voting/tour mode
       if (showLogoPopup) {
         setShowLogoPopup(false);
       } else if (showWelcomePopup && onWelcomePopupDismiss) {

@@ -1,5 +1,15 @@
 // Map mode type
-export type MapMode = 'proposal' | 'voting';
+export type MapMode = 'proposal' | 'voting' | 'tour';
+
+// YouTube video mapping for tour locations
+export interface TourVideoMapping {
+  [pinId: string]: string; // pinId => YouTube video ID
+}
+
+// Tour location interface (extends Location with YouTube video ID)
+export interface TourLocation extends Location {
+  youtubeId?: string;
+}
 
 // Sanity pin data structure
 export interface SanityPin {

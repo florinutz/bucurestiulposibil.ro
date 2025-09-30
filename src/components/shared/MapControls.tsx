@@ -14,7 +14,7 @@ interface SearchResult {
 interface MapControlsProps {
   onCenterChange?: (center: [number, number]) => void;
   onZoomChange?: (zoom: number) => void;
-  mode?: 'proposal' | 'voting';
+  mode?: 'proposal' | 'voting' | 'tour';
 }
 
 export interface MapControlsRef {

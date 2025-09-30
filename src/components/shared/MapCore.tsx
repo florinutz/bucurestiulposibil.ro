@@ -98,8 +98,8 @@ export function MapCore({
 
   // Create popup content based on mode
   const createPopupContent = useCallback((location: Location | VotableLocation) => {
-    if (mode === 'voting') {
-      // No popup content in voting mode; we use a modal instead
+    if (mode === 'voting' || mode === 'tour') {
+      // No popup content in voting/tour modes; we use a modal instead
       return '';
     }
 
@@ -188,8 +188,8 @@ export function MapCore({
               onSpecialPinPlacedRef.current(lat, lng);
             }
           });
-        } else if (mode === 'voting') {
-          // In voting mode, map clicks act like ESC key (close modals)
+        } else if (mode === 'voting' || mode === 'tour') {
+          // In voting/tour mode, map clicks act like ESC key (close modals)
           map.on('click', () => {
             if (onMapClickRef.current) {
               onMapClickRef.current();
@@ -312,8 +312,8 @@ export function MapCore({
               sticky: true
             });
 
-            // In voting mode, clicking a marker should trigger an external handler to open the modal
-            if (mode === 'voting' && onPinClickRef.current) {
+            // In voting/tour mode, clicking a marker should trigger an external handler to open the modal
+            if ((mode === 'voting' || mode === 'tour') && onPinClickRef.current) {
               marker.on('click', () => {
                 onPinClickRef.current?.(enhancedLocation);
               });
