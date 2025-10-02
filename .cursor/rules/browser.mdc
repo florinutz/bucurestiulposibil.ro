@@ -1,8 +1,7 @@
 ---
 alwaysApply: true
 ---
-know you can use mcp playwright when needed.
-it's configured and its browser is installed. 
+use browser automation when needed.
 when you run npm run dev to test locally always remember the port, as that will be important when opening the right url (http://localhost:300X)
 never work with remote stuff, just local (no --remote); unless I tell you to!
 you can use wrangler to interact with the local d1 instance
