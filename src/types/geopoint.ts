@@ -135,6 +135,7 @@ export interface VotableLocation {
 export interface Location {
   id: string
   title: string
+  slug?: string
   description: string
   lat: number
   lng: number

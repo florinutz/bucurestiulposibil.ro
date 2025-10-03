@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useImperativeHandle } from 'react';
+import Image from 'next/image';
+import { Modal } from './ModalSystem';
 
 interface SearchResult {
   lat: string;
@@ -35,6 +37,40 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
   // Help box state
   const [showHelp, setShowHelp] = useState(false);
 
+  // Help modal state for tour mode
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
+  // Velostrada modal state for tour mode
+  const [showVelostradaModal, setShowVelostradaModal] = useState(false);
+
+  // ESC key handling specifically for help modal
+  useEffect(() => {
+    if (!showHelpModal) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setShowHelpModal(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showHelpModal]);
+
+  // ESC key handling specifically for velostrada modal
+  useEffect(() => {
+    if (!showVelostradaModal) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setShowVelostradaModal(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showVelostradaModal]);
+
   // GPS location state
   const [isLocating, setIsLocating] = useState(false);
 
@@ -42,6 +78,8 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
   const collapseAll = useCallback(() => {
     setShowSearch(false);
     setShowHelp(false);
+    setShowHelpModal(false);
+    setShowVelostradaModal(false);
     setSearchResults([]);
   }, []);
 
@@ -229,16 +267,16 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
     }
   }, [showSearch]);
 
-  // ESC key handling
+  // ESC key handling - only when modals are not open (ModalSystem handles it when modals are open)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !showHelpModal && !showVelostradaModal) {
         collapseAll();
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [collapseAll]);
+  }, [collapseAll, showHelpModal, showVelostradaModal]);
 
   const getHelpContent = () => {
     if (mode === 'voting') {
@@ -262,8 +300,8 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
 
   return (
     <div className="fixed bottom-28 right-4 z-30 flex flex-col items-end gap-3 pointer-events-auto">
-      {/* Collapsible Search Box */}
-      {showSearch ? (
+      {/* Collapsible Search Box - only show for proposal and voting modes */}
+      {mode !== 'tour' && showSearch ? (
         <div className="relative w-64">
           <input
             ref={searchInputRef}
@@ -292,7 +330,7 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
             </div>
           )}
         </div>
-      ) : (
+      ) : mode !== 'tour' ? (
         <button
           onClick={() => setShowSearch(true)}
           className="p-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 hover:bg-white transition-colors cursor-pointer"
@@ -303,7 +341,7 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </button>
-      )}
+      ) : null}
 
       {/* Help Button */}
       {showHelp ? (
@@ -325,7 +363,7 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
         </div>
       ) : (
         <button
-          onClick={() => setShowHelp(true)}
+          onClick={() => mode === 'tour' ? setShowHelpModal(true) : setShowHelp(true)}
           className="p-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 hover:bg-white transition-colors cursor-pointer"
           title="Ajutor"
         >
@@ -341,8 +379,8 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
         onClick={handleGPSLocation}
         disabled={isLocating}
         className={`p-3 rounded-lg shadow-lg border transition-all duration-200 ${
-          isLocating 
-            ? 'bg-blue-500 text-white border-blue-600 cursor-not-allowed' 
+          isLocating
+            ? 'bg-blue-500 text-white border-blue-600 cursor-not-allowed'
             : 'bg-white/90 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-white cursor-pointer'
         }`}
         title={isLocating ? "Localizare..." : "Locația mea actuală"}
@@ -359,6 +397,94 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
           </svg>
         )}
       </button>
+
+      {/* Help Modal for Tour Mode */}
+      <Modal
+        isOpen={mode === 'tour' && showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        title="Bucureștiul Posibil"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <p className="text-gray-700">
+            „Bucureștiul Posibil” este un proiect desfășurat de{' '}
+            <a href="https://strazipentruoameni.net" target="_blank" className="text-blue-600 hover:underline" rel="noopener noreferrer">
+              Asociația Străzi pentru Oameni
+            </a>{' '}
+            și este co-finanțat de Administrația Fondului Cultural Național –{' '}
+            <a href="https://www.afcn.ro/" target="_blank" className="text-blue-600 hover:underline" rel="noopener noreferrer">
+              AFCN
+            </a>.
+          </p>
+
+          <p className="text-gray-700">
+            <a href="https://strazipentruoameni.net/proiecte/bucurestiul-posibil" target="_blank" className="text-blue-600 hover:underline" rel="noopener noreferrer">
+              Manifestul Bucureștiul Posibil
+            </a>
+          </p>
+
+          <div className="flex gap-4">
+            <a
+              href="https://www.facebook.com/strazipentruoameni"
+              target="_blank"
+              className="group relative bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-center flex-1 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2 font-medium"
+              rel="noopener noreferrer"
+            >
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              urmărește-ne pe Facebook
+            </a>
+            <a
+              href="https://www.instagram.com/strazi.pentru.oameni/"
+              target="_blank"
+              className="group relative bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all duration-300 text-center flex-1 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2 font-medium"
+              rel="noopener noreferrer"
+            >
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+              </svg>
+              sau pe instagram
+            </a>
+          </div>
+
+          <div className="flex justify-center">
+            <Image
+              src="/SpO-si-AFCN.jpg"
+              alt="SpO și AFCN"
+              width={300}
+              height={150}
+              className="rounded"
+            />
+          </div>
+
+          <p className="text-sm text-gray-500 text-center">
+            Proiectul nu reprezintă în mod necesar poziția Administrației Fondului Cultural Național. AFCN nu este responsabilă de conținutul proiectului sau de modul în care rezultatele proiectului pot fi folosite. Acestea sunt în întregime responsabilitatea beneficiarului finanțării.
+          </p>
+        </div>
+      </Modal>
+
+      {/* Velostrada Modal for Tour Mode */}
+      <Modal
+        isOpen={mode === 'tour' && showVelostradaModal}
+        onClose={() => setShowVelostradaModal(false)}
+        title="Ce este o Velostradă?"
+        size="lg"
+      >
+        <div className="space-y-4 text-gray-700">
+          <p>
+            Velostrada este un concept deja de mare succes în țări precum Germania, Austria și Olanda, și care a început să se extindă în ultimii ani și în alte țări, precum Franța sau Spania.
+          </p>
+
+          <p>
+            Este vorba de o stradă secundară unde amenajarea este făcut cu gândul ca bicicliștii să fie principalii utilizatori, iar mașinile să fie în plan secund. Accesul mașinilor NU este interzis pe Velostrăzi, însă circulația se face cu viteză mică, în primul rând pentru accesul la locurile de parcare și accesul riveranilor, și nu ca stradă de tranzit.
+          </p>
+
+          <p>
+            Velostrada este o soluție low-cost de promovare a transportului alternativ. După transformare, aceste străzi tind să devină mai liniștite, mai verzi și să ofere un aer mai respirabil, aducând un beneficiu important pentru locuitorii din zonă.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 });

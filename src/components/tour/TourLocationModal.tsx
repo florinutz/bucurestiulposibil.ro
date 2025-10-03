@@ -4,14 +4,15 @@ import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { X, Maximize2 } from 'lucide-react';
 import type { TourLocation } from '@/types/geopoint';
-import { getLocationImageUrl } from '@/lib/locationImages';
+import { processVelostradaLinks } from '@/lib/processVelostradaLinks';
 
 interface TourLocationModalProps {
   location: TourLocation | null;
   onClose: () => void;
+  onVelostradaClick?: () => void;
 }
 
-export function TourLocationModal({ location, onClose }: TourLocationModalProps) {
+export function TourLocationModal({ location, onClose, onVelostradaClick }: TourLocationModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // ESC key handling
@@ -44,7 +45,11 @@ export function TourLocationModal({ location, onClose }: TourLocationModalProps)
 
   if (!location) return null;
 
-  const imageUrl = getLocationImageUrl(location.id);
+  // Use postcard images from public/postcards/ directory based on slug
+  // Note: splai doesn't have an image yet
+  const imageUrl = location.slug && location.slug !== 'splai' 
+    ? `/postcards/${location.slug}.jpg` 
+    : null;
 
   return (
     <>
@@ -120,7 +125,9 @@ export function TourLocationModal({ location, onClose }: TourLocationModalProps)
                   >
                     <div className="prose prose-gray max-w-none">
                       <p className="text-gray-700 text-[0.95rem] leading-relaxed whitespace-pre-line">
-                        {location.description}
+                        {onVelostradaClick && location.description
+                          ? processVelostradaLinks(location.description, onVelostradaClick)
+                          : location.description}
                       </p>
                     </div>
                   </div>
