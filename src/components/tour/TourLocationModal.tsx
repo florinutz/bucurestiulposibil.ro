@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { X, Maximize2 } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import type { TourLocation } from '@/types/geopoint';
 import { processVelostradaLinks } from '@/lib/processVelostradaLinks';
 
@@ -13,33 +13,27 @@ interface TourLocationModalProps {
 }
 
 export function TourLocationModal({ location, onClose, onVelostradaClick }: TourLocationModalProps) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
   // ESC key handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isFullscreen) {
-          setIsFullscreen(false);
-        } else {
-          onClose();
-        }
+        onClose();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, isFullscreen]);
+  }, [onClose]);
 
   const handleImageClick = useCallback(() => {
     if (location?.youtubeId) {
-      setIsFullscreen(true);
+      window.open(`https://youtu.be/${location.youtubeId}`, '_blank');
     }
   }, [location?.youtubeId]);
 
-  const handleFullscreenClick = useCallback(() => {
+  const handleLinkClick = useCallback(() => {
     if (location?.youtubeId) {
-      setIsFullscreen(true);
+      window.open(`https://youtu.be/${location.youtubeId}`, '_blank');
     }
   }, [location?.youtubeId]);
 
@@ -72,9 +66,9 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
           {/* Two-column layout (stack on mobile) */}
           <div className="grid grid-cols-1 md:grid-cols-5 flex-1 min-h-0">
             {/* Image column */}
-            <div 
+            <div
               className={`relative bg-gray-100 min-h-[42vh] md:min-h-[24rem] lg:min-h-[30rem] md:col-span-3 ${
-                location.youtubeId ? 'cursor-pointer group' : ''
+                location.youtubeId ? 'cursor-pointer' : ''
               }`}
               onClick={handleImageClick}
             >
@@ -89,9 +83,9 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
                     className="object-cover"
                   />
                   {location.youtubeId && (
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-4">
-                        <Maximize2 size={32} className="text-gray-800" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <div className="bg-white/90 rounded-full p-3">
+                        <ExternalLink size={24} className="text-gray-800" />
                       </div>
                     </div>
                   )}
@@ -133,14 +127,14 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
                   </div>
                 </div>
 
-                {/* Fixed footer with fullscreen button */}
+                {/* Fixed footer with link button */}
                 {location.youtubeId && (
                   <div className="flex-shrink-0">
                     <button
-                      onClick={handleFullscreenClick}
+                      onClick={handleLinkClick}
                       className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm transition-colors"
                     >
-                      <Maximize2 size={18} />
+                      <ExternalLink size={18} />
                       Vezi în 360°
                     </button>
                   </div>
@@ -151,33 +145,6 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
         </div>
       </div>
 
-      {/* Fullscreen Video Modal */}
-      {isFullscreen && location.youtubeId && (
-        <div className="fixed inset-0 z-[20000] bg-black flex items-center justify-center">
-          {/* Close button */}
-          <button
-            className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-            aria-label="Închide"
-            onClick={() => setIsFullscreen(false)}
-          >
-            <X size={24} />
-          </button>
-
-          {/* YouTube iframe */}
-          <div className="w-full h-full max-w-[95vw] max-h-[95vh] flex items-center justify-center">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube-nocookie.com/embed/${location.youtubeId}?autoplay=1&controls=1`}
-              title={location.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 }
