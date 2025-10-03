@@ -26,6 +26,7 @@
     "next": "15.3.3",
     "next-sanity": "9.12.2",
     "react": "19.0.0",
+    "react-device-detect": "^2.2.3",
     "react-dom": "19.0.0",
     "sanity": "^3.99.0",
     "styled-components": "^6.1.19"
