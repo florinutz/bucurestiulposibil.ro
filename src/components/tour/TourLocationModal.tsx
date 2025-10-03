@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
-import { X, Maximize2, ExternalLink } from 'lucide-react';
+import { X, Maximize2 } from 'lucide-react';
 import type { TourLocation } from '@/types/geopoint';
 import { processVelostradaLinks } from '@/lib/processVelostradaLinks';
 import { useIsMobile } from '@/lib/useIsMobile';
@@ -17,33 +17,45 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isMobile = useIsMobile();
 
-  // ESC key handling
+  // ESC key handling - Desktop only for fullscreen modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isFullscreen) {
+        if (isFullscreen && !isMobile) {
           setIsFullscreen(false);
         } else {
           onClose();
         }
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, isFullscreen]);
+  }, [onClose, isFullscreen, isMobile]);
 
   const handleImageClick = useCallback(() => {
     if (location?.youtubeId) {
-      setIsFullscreen(true);
+      if (isMobile) {
+        // Mobile: Directly open YouTube link
+        window.open(`https://youtu.be/${location.youtubeId}`, '_blank', 'noopener,noreferrer');
+      } else {
+        // Desktop: Open fullscreen modal
+        setIsFullscreen(true);
+      }
     }
-  }, [location?.youtubeId]);
+  }, [location?.youtubeId, isMobile]);
 
   const handleFullscreenClick = useCallback(() => {
     if (location?.youtubeId) {
-      setIsFullscreen(true);
+      if (isMobile) {
+        // Mobile: Directly open YouTube link
+        window.open(`https://youtu.be/${location.youtubeId}`, '_blank', 'noopener,noreferrer');
+      } else {
+        // Desktop: Open fullscreen modal
+        setIsFullscreen(true);
+      }
     }
-  }, [location?.youtubeId]);
+  }, [location?.youtubeId, isMobile]);
 
   if (!location) return null;
 
@@ -153,8 +165,8 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
         </div>
       </div>
 
-      {/* Fullscreen Video Modal */}
-      {isFullscreen && location.youtubeId && (
+      {/* Fullscreen Video Modal - Desktop only */}
+      {isFullscreen && location.youtubeId && !isMobile && (
         <div className="fixed inset-0 z-[20000] bg-black flex items-center justify-center">
           {/* Close button */}
           <button
@@ -165,33 +177,18 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
             <X size={24} />
           </button>
 
-          {/* YouTube iframe for desktop, link for mobile */}
+          {/* YouTube iframe for desktop */}
           <div className="w-full h-full max-w-[95vw] max-h-[95vh] flex items-center justify-center">
-            {isMobile ? (
-              // Mobile: Show link that opens in new tab
-              <a
-                href={`https://youtu.be/${location.youtubeId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-lg bg-red-600 hover:bg-red-700 text-white text-lg font-medium transition-colors shadow-lg"
-                onClick={() => setIsFullscreen(false)}
-              >
-                <ExternalLink size={24} />
-                Vezi în YouTube
-              </a>
-            ) : (
-              // Desktop: Show embedded iframe
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube-nocookie.com/embed/${location.youtubeId}?autoplay=1&controls=1`}
-                title={location.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            )}
+            <iframe
+              width="100%"
+              height="100%"
+              src={`https://www.youtube-nocookie.com/embed/${location.youtubeId}?autoplay=1&controls=1`}
+              title={location.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="w-full h-full"
+            />
           </div>
         </div>
       )}
