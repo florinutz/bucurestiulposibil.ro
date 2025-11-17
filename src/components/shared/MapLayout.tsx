@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MapCore } from './MapCore';
 import { MapControls, MapControlsRef } from './MapControls';
-import { Modal } from './ModalSystem';
 import Image from 'next/image';
 import type { Location, VotableLocation, MapMode } from '@/types/geopoint';
 import { VotingStore } from '@/lib/votingStore';
@@ -43,25 +42,21 @@ export function MapLayout({
   onWelcomePopupDismiss,
   welcomeContent
 }: MapLayoutProps) {
-  // Logo popup state
-  const [showLogoPopup, setShowLogoPopup] = useState(false);
   const mapControlsRef = useRef<MapControlsRef>(null);
   
   // Voting indicator state
   const [votedLocation, setVotedLocation] = useState<{ id: string; title: string } | null>(null);
 
-  // Handle logo click
+  // Handle logo click - opens help popup
   const handleLogoClick = useCallback(() => {
-    setShowLogoPopup(true);
+    mapControlsRef.current?.openHelp();
   }, []);
 
     // Handle map click in voting/tour mode (act like ESC)
   const handleMapClick = useCallback(() => {
     if (mode === 'voting' || mode === 'tour') {
-      // Close any open modals when map is clicked in voting/tour mode
-      if (showLogoPopup) {
-        setShowLogoPopup(false);
-      } else if (showWelcomePopup && onWelcomePopupDismiss) {
+      // Close welcome popup when map is clicked in voting/tour mode
+      if (showWelcomePopup && onWelcomePopupDismiss) {
         onWelcomePopupDismiss();
       }
       
@@ -70,7 +65,7 @@ export function MapLayout({
         mapControlsRef.current.collapseAll();
       }
     }
-  }, [mode, showLogoPopup, showWelcomePopup, onWelcomePopupDismiss]);
+  }, [mode, showWelcomePopup, onWelcomePopupDismiss]);
 
   // Check for voted location in voting mode
   useEffect(() => {
@@ -107,9 +102,7 @@ export function MapLayout({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (showLogoPopup) {
-          setShowLogoPopup(false);
-        } else if (showWelcomePopup && onWelcomePopupDismiss) {
+        if (showWelcomePopup && onWelcomePopupDismiss) {
           onWelcomePopupDismiss();
         }
         
@@ -123,21 +116,10 @@ export function MapLayout({
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showLogoPopup, showWelcomePopup, onWelcomePopupDismiss]);
+  }, [showWelcomePopup, onWelcomePopupDismiss]);
 
   return (
     <main className="relative w-full h-screen overflow-hidden">
-      {/* Preload image for logo popup */}
-      <div className="hidden">
-        <Image 
-          src="/SpO-si-AFCN.jpg" 
-          alt="Preload" 
-          width={400} 
-          height={200}
-          priority
-        />
-      </div>
-      
       {/* Map rendered first, z-0 */}
       <div className="absolute inset-0 z-0">
         <MapCore 
@@ -204,32 +186,6 @@ export function MapLayout({
 
       {/* Page-specific content (e.g., add button, voting UI, etc.) */}
       {children}
-
-      {/* Logo Popup Modal */}
-      <Modal 
-        isOpen={showLogoPopup} 
-        onClose={() => setShowLogoPopup(false)}
-        title="Bucureștiul Posibil"
-        size="md"
-      >
-        <div className="text-center space-y-4">
-          <p className="text-gray-600">
-            Platformă de angajare civică pentru îmbunătățirea orașului București.
-          </p>
-          <div>
-            <Image 
-              src="/SpO-si-AFCN.jpg" 
-              alt="SpO și AFCN" 
-              width={300} 
-              height={150}
-              className="mx-auto rounded"
-            />
-          </div>
-          <p className="text-sm text-gray-500">
-            Proiect realizat cu sprijinul Administrației Fondului Cultural Național (AFCN)
-          </p>
-        </div>
-      </Modal>
 
       {/* Welcome Popup (if provided) */}
       {showWelcomePopup && welcomeContent && (

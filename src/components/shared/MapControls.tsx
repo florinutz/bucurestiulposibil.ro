@@ -21,6 +21,7 @@ interface MapControlsProps {
 
 export interface MapControlsRef {
   collapseAll: () => void;
+  openHelp: () => void;
 }
 
 export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({ 
@@ -83,10 +84,20 @@ export const MapControls = React.forwardRef<MapControlsRef, MapControlsProps>(({
     setSearchResults([]);
   }, []);
 
-  // Expose collapseAll function via ref
+  // Function to open help (same behavior as clicking help button)
+  const openHelp = useCallback(() => {
+    if (mode === 'tour') {
+      setShowHelpModal(true);
+    } else {
+      setShowHelp(true);
+    }
+  }, [mode]);
+
+  // Expose functions via ref
   useImperativeHandle(ref, () => ({
-    collapseAll
-  }), [collapseAll]);
+    collapseAll,
+    openHelp
+  }), [collapseAll, openHelp]);
 
   // Search functionality using Nominatim with debouncing
   const searchLocations = useCallback(async (query: string) => {
