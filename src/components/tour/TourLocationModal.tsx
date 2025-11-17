@@ -62,7 +62,7 @@ export function TourLocationModal({ location, onClose, onVelostradaClick }: Tour
   // Use postcard images from public/postcards/ directory based on slug
   // Note: splai doesn't have an image yet
   const imageUrl = location.slug
-    ? `/postcards/${location.slug}.png`
+    ? `/postcards/${location.slug}.jpg`
     : null;
 
   return (
